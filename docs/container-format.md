@@ -16,3 +16,11 @@ The packed file is little-endian. The magic is `MQLT`. Version 1 is the only ver
 `range` is the largest axis span. Position and UV origins are the minimum of the whole mesh. A chunk does not store its own origin in this header.
 
 The bytes after each length are opaque to the container. The Draco adapter writes a Draco mesh there. Another encoder can use the same container if the decoder passed to `decodeGeometry` understands those bytes.
+
+## Validation and ownership
+
+Version 1 requires at least one chunk, known flags, a zero reserved byte, bit counts from 0 to 30, finite origins and positive finite ranges. A flagged UV attribute requires a valid UV volume. Truncated lengths/payloads and trailing bytes are rejected. An individual chunk length fits in uint32; the complete byte length must be a safe JavaScript integer and fit available memory.
+
+Volumes are normalized to float32 before encoding so encoder callbacks see exactly the metadata stored in the header. Custom volumes must enclose the values your codec quantizes.
+
+`decodeContainer` copies chunk payloads by default. Set `{ copyChunks: false }` to return input views instead. The views are valid only while the input remains alive and unmodified; do not detach its buffer while a decoder is using it.

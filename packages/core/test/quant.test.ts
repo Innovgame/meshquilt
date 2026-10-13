@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { computeVolume, quantizeComponent } from "@meshquilt/core";
 
 describe("quantizeComponent", () => {
+    it.each([-1, 31, 1.5, NaN])("rejects invalid bit count %s", (bits) => {
+        expect(() => quantizeComponent(0, 0, 1, bits)).toThrow();
+    });
     it("snaps the same position to the same value on a shared volume", () => {
         const origin = 0;
         const range = 10;

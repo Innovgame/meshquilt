@@ -1,4 +1,5 @@
-import { MeshQuiltError, type QuiltHeader, type SharedQuantization } from "./types";
+import { MeshQuiltError, type QuiltHeader, type SharedQuantization } from "./types.js";
+import { validateQuantization } from "./quant.js";
 
 export const QUILT_MAGIC = "MQLT";
 export const QUILT_VERSION = 1;
@@ -12,8 +13,17 @@ export function encodeContainer(header: QuiltHeader, chunks: Uint8Array[]): Uint
     if (chunks.length !== header.chunkCount) {
         throw new MeshQuiltError(`header chunkCount ${header.chunkCount} does not match ${chunks.length} buffers`);
     }
+    if (!Number.isInteger(header.chunkCount) || header.chunkCount < 1 || header.chunkCount > 0xffffffff) {
+        throw new MeshQuiltError("chunkCount must be an integer from 1 to 4294967295");
+    }
+    validateQuantization(header.quantization);
+    if (header.hasUv && !header.quantization.uv) throw new MeshQuiltError("UV quantization volume is missing");
     let size = HEADER_BYTES;
-    for (const chunk of chunks) size += 4 + chunk.byteLength;
+    for (const chunk of chunks) {
+        if (chunk.byteLength > 0xffffffff) throw new MeshQuiltError("chunk exceeds uint32 byte length");
+        size += 4 + chunk.byteLength;
+    }
+    if (!Number.isSafeInteger(size)) throw new MeshQuiltError("container byte length exceeds safe integer range");
     const buffer = new ArrayBuffer(size);
     const view = new DataView(buffer);
     const bytes = new Uint8Array(buffer);
@@ -40,7 +50,15 @@ export function encodeContainer(header: QuiltHeader, chunks: Uint8Array[]): Uint
     return bytes;
 }
 
-export function decodeContainer(buffer: Uint8Array): { header: QuiltHeader; chunks: Uint8Array[] } {
+export interface DecodeContainerOptions {
+    /** Default true. False returns views: keep the input alive and do not mutate or transfer it. */
+    copyChunks?: boolean;
+}
+
+export function decodeContainer(
+    buffer: Uint8Array,
+    options: DecodeContainerOptions = {}
+): { header: QuiltHeader; chunks: Uint8Array[] } {
     if (buffer.byteLength < HEADER_BYTES) throw new MeshQuiltError("quilt buffer is too small");
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     const magic = String.fromCharCode(buffer[0]!, buffer[1]!, buffer[2]!, buffer[3]!);
@@ -48,7 +66,12 @@ export function decodeContainer(buffer: Uint8Array): { header: QuiltHeader; chun
     const version = view.getUint16(4, true);
     if (version !== QUILT_VERSION) throw new MeshQuiltError(`unsupported quilt version ${version}`);
     const flags = view.getUint16(6, true);
+    if ((flags & ~(FLAG_NORMAL | FLAG_UV)) !== 0 || buffer[15] !== 0)
+        throw new MeshQuiltError("unsupported quilt flags or reserved byte");
     const chunkCount = view.getUint32(8, true);
+    if (chunkCount < 1 || chunkCount > Math.floor((buffer.byteLength - HEADER_BYTES) / 4)) {
+        throw new MeshQuiltError("invalid quilt chunk count");
+    }
     const quantization: SharedQuantization = {
         positionBits: buffer[12]!,
         normalBits: buffer[13]!,
@@ -57,6 +80,7 @@ export function decodeContainer(buffer: Uint8Array): { header: QuiltHeader; chun
     };
     const hasUv = (flags & FLAG_UV) !== 0;
     if (hasUv) quantization.uv = readVolume(view, 32, 2);
+    validateQuantization(quantization);
 
     const chunks: Uint8Array[] = [];
     let offset = HEADER_BYTES;
@@ -65,9 +89,14 @@ export function decodeContainer(buffer: Uint8Array): { header: QuiltHeader; chun
         const length = view.getUint32(offset, true);
         offset += 4;
         if (offset + length > buffer.byteLength) throw new MeshQuiltError("quilt chunk is truncated");
-        chunks.push(buffer.slice(offset, offset + length));
+        chunks.push(
+            options.copyChunks === false
+                ? buffer.subarray(offset, offset + length)
+                : buffer.slice(offset, offset + length)
+        );
         offset += length;
     }
+    if (offset !== buffer.byteLength) throw new MeshQuiltError("unexpected trailing quilt bytes");
     return {
         header: {
             version: 1,

@@ -6,10 +6,13 @@
     "type": "module",
     "packageManager": "pnpm@10.33.0",
     "engines": {
-        "node": ">=22"
+        "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
     },
     "scripts": {
         "build": "pnpm -r --if-present build",
+        "build:lib": "pnpm --filter \"./packages/*\" -r build",
+        "test:packages": "pnpm build:lib && node scripts/verify-packages.mjs",
+        "test:workers": "pnpm build:lib && pnpm --filter @meshquilt/draco test:browser",
         "site": "pnpm --filter @meshquilt/site dev",
         "site:build": "pnpm --filter @meshquilt/site build",
         "site:preview": "pnpm --filter @meshquilt/site preview",
@@ -23,16 +26,17 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "test": "vitest run",
-        "typecheck": "tsc --noEmit && pnpm --filter @meshquilt/site typecheck"
+        "typecheck": "node node_modules/typescript-compiler/bin/tsc --noEmit && pnpm --filter @meshquilt/site typecheck"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@types/node": "^22.19.0",
-        "eslint": "^10.2.0",
-        "prettier": "^3.8.2",
-        "typescript": "^5.8.3",
-        "typescript-eslint": "^8.58.1",
-        "vitest": "^3.2.4"
+        "@types/node": "^26.6.5",
+        "eslint": "^10.12.0",
+        "prettier": "^3.9.10",
+        "typescript": "^6.0.3",
+        "typescript-compiler": "npm:typescript@^7.0.2",
+        "typescript-eslint": "^8.71.2",
+        "vitest": "^5.0.4"
     },
     "license": "MIT",
     "pnpm": {

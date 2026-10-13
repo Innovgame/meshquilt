@@ -43,11 +43,12 @@ export default defineConfig(({ mode }) => {
         },
         define: { __REPOSITORY_URL__: JSON.stringify(repoUrl) },
         build: {
-            rollupOptions: {
+            rolldownOptions: {
                 output: {
-                    manualChunks: {
-                        three: ["three"],
-                        markdown: ["react-markdown", "remark-gfm"]
+                    manualChunks(id) {
+                        if (id.includes("/node_modules/three/")) return "three";
+                        if (id.includes("/node_modules/react-markdown/") || id.includes("/node_modules/remark-gfm/"))
+                            return "markdown";
                     }
                 }
             }

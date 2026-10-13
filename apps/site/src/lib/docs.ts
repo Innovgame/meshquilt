@@ -3,6 +3,7 @@ import three from "../../../../packages/three/README.md?raw";
 import draco from "../../../../packages/draco/README.md?raw";
 import quantization from "../../../../docs/quantization.md?raw";
 import container from "../../../../docs/container-format.md?raw";
+import runtime from "../../../../docs/runtime-and-memory.md?raw";
 import contributing from "../../../../CONTRIBUTING.md?raw";
 import changelog from "../../../../CHANGELOG.md?raw";
 import { version } from "./config";
@@ -123,7 +124,7 @@ const quickStart = `# Quick start
 
 ## Set up the workspace
 
-MeshQuilt is a pnpm workspace. For local development, use Node.js 22 or newer and pnpm 10 or newer, then run these commands from your clone:
+MeshQuilt is a pnpm workspace. For local development, use Node.js 22.12+, 24+ or 26+ and pnpm 10.33.0, then run these commands from your clone:
 
 \`\`\`bash
 pnpm install
@@ -174,7 +175,7 @@ const quickStartZh = `# 快速上手
 
 ## 安装工作区
 
-MeshQuilt 使用 pnpm 工作区。本地开发需要 Node.js 22+ 和 pnpm 10+，在克隆的仓库中运行：
+MeshQuilt 使用 pnpm 工作区。本地开发需要 Node.js 22.12+、24+ 或 26+，以及 pnpm 10.33.0，在克隆的仓库中运行：
 
 \`\`\`bash
 pnpm install
@@ -373,7 +374,7 @@ const contributingZh = `# 参与贡献
 
 ## 开发环境
 
-需要 Node.js 22 与 pnpm 10+。
+需要 Node.js 22.12+、24+ 或 26+，以及 pnpm 10.33.0。构建使用 TypeScript 7，为 ESLint 保留 TypeScript 6 API。
 
 \`\`\`bash
 pnpm install
@@ -420,12 +421,107 @@ const changelogZh = `# 更新日志
 
 ## Unreleased
 
+- 修复 Worker 池销毁、取消、超时、崩溃和初始化失败时的任务结束与资源回收；Worker 与主线程共享类型化编码实现。
+- 编码改为按需生成几何块，遇错停止调度；压缩载荷解码支持显式零拷贝。
+- 校验非有限几何值和非法 MQLT 元数据，量化配置在编码前统一到 float32 精度。
+- 修复旧版 Three.js 交错属性与自定义局部矩阵；编码前拒绝不支持的材质、变形数据和部分绘制范围。
+- 修复原生 ESM 发布产物，增加安装包、真实 Draco 往返与浏览器 Worker 验证。
+- 升级至 TypeScript 7 编译、Vite 8、Vitest 5、React 19.3 与 Three.js 0.186；为 ESLint 保留 TypeScript 6 API，为兼容测试保留 Three.js 0.160。
+
 ## 0.1.0
 
 - 对索引三角网格分块，将压缩结果打包为 MQLT 容器。
 - 基于完整网格共享位置与 UV 量化范围，让块边界保持同一量化网格。
 - 读取 THREE.Mesh，将解码结果绘制为 Group 的独立子网格。
 - 通过注入的 Draco 模块编码与解码，使用 Worker 池让每个编码器实例在独立线程运行。
+`;
+
+const runtimeZh = `# 运行时、内存与取消
+
+MeshQuilt 限制每次交给编码器的几何大小。完整缓冲区 API 的总内存占用仍与模型大小有关。
+
+## 编码工作集
+
+Three.js 适配器会将完整源属性读入独立缓冲区。核心层计算共享量化、校验几何，并仅在并发槽位可用时通过惰性迭代器生成下一块。除了分块器的暂存缓冲，核心流水线同时编码的未压缩块不超过 concurrency。
+
+源数组、Worker 的 WASM 堆、累积的压缩载荷和最终 MQLT 容器仍占用内存。打包期间压缩载荷与最终输出会同时存在。当前 API 没有流式输出接口，校验、属性读取与分块仍在调用线程执行，因此不能视为总内存恒定或完全移出主线程的方案。
+
+splitGeometry 为兼容性返回完整块数组，定制有界流水线可用 iterateGeometry。单块路径返回源几何本身，多块路径复制属性。编码期间不要修改或转移源缓冲区。
+
+## 解码所有权
+
+decodeContainer 与 decodeGeometry 默认复制压缩载荷。设置 copyChunks: false 可返回源容器的视图；解码完成前必须保持容器存活、未修改，且不能转移其底层缓冲区。
+
+解码输出仍为独立几何块。Three 适配器创建独立几何，但共享原始材质。移除结果时释放生成的几何；材质生命周期仍由应用管理。
+
+## 失败与取消
+
+mapPool 接收可迭代对象，保持输入顺序。第一次任务失败后停止领取新任务，等待已经启动的任务结束，再以首个错误拒绝，避免调用方在任务还运行时释放资源。任意用户回调如果一直不结束，核心层无法强行中断。
+
+encodeGeometry 支持 signal，decodeGeometry 在最后一个 options 参数中支持 signal。取消在任务之间检查，不能打断同步 JavaScript。将同一个 signal 传给 createDracoWorkerPool，可立即终止 Worker/WASM 并拒绝排队任务。dispose() 也会清理整个池；timeoutMs 默认对初始化及每个已分派任务限时 30 秒。
+
+## 工具链
+
+开发环境为 Node.js 22.12+、24+ 或 26+，pnpm 10.33.0。库使用带 .js 相对引用的 ESM，安装包测试验证原生导入与声明解析。Three 适配器同时测试 0.160.0 和当前开发版本。
+
+构建与类型检查使用 TypeScript 7（typescript-compiler）。当前最新版 typescript-eslint 仍需要 TypeScript 6 API，因此根目录 typescript 有意保留 6.0.3。three-min 有意固定在 0.160.0；其他直接依赖使用升级时的最新稳定版。
+
+## 验收命令
+
+\`\`\`bash
+pnpm check
+pnpm test
+pnpm test:packages
+pnpm --filter @meshquilt/draco exec playwright install chromium
+pnpm test:workers
+pnpm site:test
+pnpm build
+\`\`\`
+
+真实 Draco 测试验证多块往返与接缝一致；浏览器测试覆盖经典 Worker、WASM 路径、并行编码与输入缓冲区所有权。这些是正确性检查，不是性能或峰值内存基准。
+`;
+
+const coreUpdatesZh = `
+## 调度与所有权
+
+encodeGeometry 根据并发槽位按需生成块。iterateGeometry(geometry, maxTriangles) 是惰性分块器，splitGeometry 仍返回数组。单块路径共享源数组，多块路径复制属性。编码期间不要修改几何与量化配置，也不要转移调用方所有的缓冲区。
+
+signal 用于停止调度；失败或取消时会等待已经启动的编码调用结束。mapPool 支持同步可迭代对象，并保持输入顺序。若需中断 Worker 内的 WASM，请同时向 Worker 池传入 signal。
+
+\`\`\`ts
+const decoded = await decodeGeometry(buffer, decodeChunk, 2, { copyChunks: false, signal });
+\`\`\`
+
+默认解码复制压缩载荷；copyChunks: false 返回源缓冲区视图，解码完成前不要修改、转移或释放源容器。量化位数需为 0–30 的整数，所有几何属性须为有限数值，显式量化范围须为正有限 float32。显式配置先规范化到容器精度，再传入编码器。
+
+惰性分块降低未压缩块的工作集；源数组、压缩结果和最终容器仍需完整保留。详见[运行时与内存](#/docs/runtime)。
+`;
+const threeUpdatesZh = `
+## 支持边界与资源所有权
+
+matrixAutoUpdate 为 false 时会保留自定义局部矩阵。将结果添加到源网格的同一父级，可继续应用父级变换。
+
+编码前拒绝多材质、骨骼、实例化和 morph-target 网格，先烘焙成静态几何。部分 drawRange 必须先提取成独立几何。单材质 groups 可以直接使用，支持索引与非索引三角网格，以及规范化、交错属性。最低测试版本为 Three.js 0.160.0。
+
+移除结果时释放各块几何。材质与源网格共享，生命周期由应用管理，不应随单个块自动释放。适配器复制源属性，不转移原始 Three.js 缓冲区。
+
+EncodeMeshOptions 与核心层保持一致，支持 signal。decodeMesh 的最后一个 options 参数支持 copyChunks 与 signal。
+`;
+const dracoUpdatesZh = `
+## Worker 生命周期与配置
+
+经典 Worker 由类型化源码构建，与主线程共享同一编码实现。自行部署导出的 Worker 文件与 Draco 构建。URL 相对 Worker 解析，建议使用根相对或绝对 URL；WASM 默认从编码脚本目录加载，可用 wasmUrl 覆盖。
+
+池配置支持 settings（encodeSpeed、decodeSpeed）、timeoutMs 和 signal。默认初始化及每个已分派任务的超时为 30 秒，排队时间不计入。取消、销毁、超时或运行时 Worker 故障会终止整个池，拒绝运行中、排队和后续调用；初始化失败回收已创建的 Worker。单个编码器报告的错误只影响该任务，池可以继续使用。dispose() 可重复调用。
+
+池仅在 Worker 可用时复制并转移输入的副本，不会分离调用方的原始缓冲区。排队调用仍持有传入几何，建议使用 encodeGeometry 并让 concurrency 与池大小匹配。
+`;
+const containerUpdatesZh = `
+## 校验与所有权
+
+版本 1 要求至少一个块，标志位均已定义，保留字节为 0，量化位数为 0–30，原点有限，范围为正有限值。UV 标志必须有有效的 UV 范围。截断长度、截断载荷和尾随数据都会被拒绝。单个块长度使用 uint32，总长度需是安全整数并适合可用内存。
+
+编码前将范围统一为 float32 精度，让回调看到的元数据与容器一致。自定义范围需覆盖输入属性。decodeContainer 默认复制载荷，可用 copyChunks: false 获取视图，使用期间不要修改或转移源容器。
 `;
 
 export const docs: Doc[] = [
@@ -448,7 +544,7 @@ export const docs: Doc[] = [
         title: ["@meshquilt/core", "@meshquilt/core"],
         description: ["The codec-independent foundation.", "与编码器无关的基础层。"],
         category: "packages",
-        content: [core, coreZh],
+        content: [core, coreZh + coreUpdatesZh],
         source: "packages/core/README.md"
     },
     {
@@ -456,7 +552,7 @@ export const docs: Doc[] = [
         title: ["@meshquilt/three", "@meshquilt/three"],
         description: ["Bring your mesh. Keep your material.", "使用现有网格与材质。"],
         category: "packages",
-        content: [three, threeZh],
+        content: [three, threeZh + threeUpdatesZh],
         source: "packages/three/README.md"
     },
     {
@@ -464,7 +560,7 @@ export const docs: Doc[] = [
         title: ["@meshquilt/draco", "@meshquilt/draco"],
         description: ["Draco adapters and isolated workers.", "Draco 适配器与隔离的 Worker。"],
         category: "packages",
-        content: [draco, dracoZh],
+        content: [draco, dracoZh + dracoUpdatesZh],
         source: "packages/draco/README.md"
     },
     {
@@ -480,8 +576,16 @@ export const docs: Doc[] = [
         title: ["MQLT container", "MQLT 容器"],
         description: ["A compact header. Opaque chunk payloads.", "紧凑的头部与不透明的块载荷。"],
         category: "concepts",
-        content: [container, containerZh],
+        content: [container, containerZh + containerUpdatesZh],
         source: "docs/container-format.md"
+    },
+    {
+        id: "runtime",
+        title: ["Runtime & memory", "运行时与内存"],
+        description: ["Ownership, bounded chunk scheduling, and cancellation.", "所有权、有界分块调度与取消。"],
+        category: "concepts",
+        content: [runtime, runtimeZh],
+        source: "docs/runtime-and-memory.md"
     },
     {
         id: "contributing",

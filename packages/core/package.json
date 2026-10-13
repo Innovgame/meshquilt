@@ -25,6 +25,7 @@
         "README.md"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json"
+        "build": "node ../../node_modules/typescript-compiler/bin/tsc -p tsconfig.json",
+        "prepack": "pnpm build"
     }
 }

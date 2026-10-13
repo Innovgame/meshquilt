@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Github, Languages, Menu, Moon, Search, Sun } from "lucide-react";
+import { ArrowUpRight, Languages, Menu, Moon, Search, Sun } from "lucide-react";
+import { Github } from "./github-icon";
 import { githubUrl, sourceUrl, version } from "@/lib/config";
 import { useSite } from "@/lib/site-context";
 import { Button } from "./ui/button";

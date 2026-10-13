@@ -9,12 +9,13 @@ export default defineConfig([
     eslint.configs.recommended,
     ...tseslint.configs.recommended,
     {
-        files: ["eslint.config.mjs"],
+        files: ["eslint.config.mjs", "scripts/*.mjs", "packages/*/scripts/*.mjs"],
         languageOptions: {
             globals: {
                 process: "readonly",
                 console: "readonly",
-                URL: "readonly"
+                URL: "readonly",
+                Buffer: "readonly"
             }
         }
     },

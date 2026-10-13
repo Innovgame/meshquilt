@@ -1,6 +1,6 @@
 import type { ChunkGeometry, SharedQuantization } from "@meshquilt/core";
 import { MeshQuiltError } from "@meshquilt/core";
-import type { DracoEncoderModule } from "./types";
+import type { DracoEncoderModule } from "./types.js";
 
 export interface DracoEncodeSettings {
     encodeSpeed?: number;

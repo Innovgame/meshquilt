@@ -24,6 +24,7 @@ function docLink(href: string) {
     const path = href.split("#")[0] ?? "";
     if (path.endsWith("quantization.md")) return "#/docs/quantization";
     if (path.endsWith("container-format.md")) return "#/docs/container-format";
+    if (path.endsWith("runtime-and-memory.md")) return "#/docs/runtime";
     if (path.endsWith("CONTRIBUTING.md")) return "#/docs/contributing";
     if (path.endsWith("CHANGELOG.md")) return "#/changelog";
     if (path.endsWith("README.md")) return "#/docs/introduction";

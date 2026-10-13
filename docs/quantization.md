@@ -13,3 +13,5 @@ A bit count of `0` skips quantization for that attribute. The defaults are 14 bi
 Compute smooth normals on the complete mesh before splitting. Normals computed inside a chunk do not see the neighboring chunk, so the cut becomes a hard edge.
 
 Draw the decoded chunks as separate meshes. Merging them back into one buffer rebuilds the large allocation the chunking step avoided.
+
+All geometry attributes must be finite. Explicit position origins have three components and explicit UV origins have two. Ranges must remain positive and finite when converted to float32. MeshQuilt normalizes those volumes before codec callbacks, matching the header precision. A custom volume must cover the input attribute values.

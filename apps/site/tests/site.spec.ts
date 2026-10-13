@@ -97,6 +97,7 @@ test("all docs load directly, survive refresh, and use valid internal navigation
         "draco",
         "quantization",
         "container-format",
+        "runtime",
         "contributing",
         "changelog"
     ]) {

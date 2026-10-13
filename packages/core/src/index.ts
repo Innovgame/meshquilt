@@ -1,5 +1,5 @@
-export { QUILT_MAGIC, QUILT_VERSION, decodeContainer, encodeContainer } from "./container";
-export { decodeGeometry, encodeGeometry, mapPool, quantizationOf } from "./pipeline";
+export { QUILT_MAGIC, QUILT_VERSION, decodeContainer, encodeContainer } from "./container.js";
+export { decodeGeometry, encodeGeometry, mapPool, quantizationOf } from "./pipeline.js";
 export {
     DEFAULT_MAX_TRIANGLES,
     DEFAULT_NORMAL_BITS,
@@ -9,9 +9,12 @@ export {
     computeSharedQuantization,
     computeVolume,
     quantizeComponent
-} from "./quant";
-export { splitGeometry, validateGeometry } from "./split";
-export { MeshQuiltError } from "./types";
+} from "./quant.js";
+export { iterateGeometry, splitGeometry, validateGeometry } from "./split.js";
+export type { EncodeGeometryOptions, MapPoolOptions } from "./pipeline.js";
+export type { DecodeContainerOptions } from "./container.js";
+export type { QuantBits } from "./quant.js";
+export { MeshQuiltError } from "./types.js";
 export type {
     ChunkDecoder,
     ChunkEncoder,
@@ -20,4 +23,4 @@ export type {
     QuantVolume,
     QuiltHeader,
     SharedQuantization
-} from "./types";
+} from "./types.js";

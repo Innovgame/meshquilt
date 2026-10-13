@@ -54,6 +54,7 @@ mesh.parent?.add(group);
 ## 限制
 
 - 一个源网格只有一种材质。多材质要先拆开再编码。
+- 骨骼、实例化和 morph-target 网格需先烘焙成静态几何；部分 drawRange 需提取为独立几何。
 - UV 是 2 分量。位置和法线是 3 分量。
 - 平滑法线要在切块之前，在完整网格上算好。按块算法线会把切口变成硬边。
 - 某项位数为 `0` 时，不为该项设置量化。默认是位置 14、法线 8、UV 10。
@@ -75,16 +76,19 @@ GitHub Pages 部署说明见 [官网 README](apps/site/README.md)。在仓库 Se
 
 ## 开发
 
-需要 Node.js 22 和 pnpm 10+。
+需要 Node.js 22.12+、24+ 或 26+，以及 pnpm 10.33.0。
 
 ```bash
 pnpm install
 pnpm check
 pnpm test
+pnpm test:packages
 pnpm build
 ```
 
 `pnpm check` 会跑 Prettier、ESLint 和 TypeScript 工程检查。参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+编码现在按需生成几何块，但源网格和完整压缩输出仍占用内存。所有权、取消、Worker 失败处理和零拷贝解码见 [运行时与内存](docs/runtime-and-memory.md)。构建使用 TypeScript 7；因当前 ESLint 解析器的 API 限制，并行保留 TypeScript 6。
 
 ## 许可
 

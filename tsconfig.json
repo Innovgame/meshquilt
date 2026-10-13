@@ -3,11 +3,10 @@
     "compilerOptions": {
         "lib": ["ES2022", "DOM"],
         "noEmit": true,
-        "baseUrl": ".",
         "paths": {
-            "@meshquilt/core": ["packages/core/src/index.ts"],
-            "@meshquilt/draco": ["packages/draco/src/index.ts"],
-            "@meshquilt/three": ["packages/three/src/index.ts"]
+            "@meshquilt/core": ["./packages/core/src/index.ts"],
+            "@meshquilt/draco": ["./packages/draco/src/index.ts"],
+            "@meshquilt/three": ["./packages/three/src/index.ts"]
         }
     },
     "include": ["packages/**/*.ts", "apps/**/*.ts", "vitest.config.ts"],

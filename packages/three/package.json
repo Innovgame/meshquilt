@@ -25,7 +25,8 @@
         "README.md"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json"
+        "build": "node ../../node_modules/typescript-compiler/bin/tsc -p tsconfig.json",
+        "prepack": "pnpm --filter @meshquilt/core build && pnpm build"
     },
     "dependencies": {
         "@meshquilt/core": "workspace:*"
@@ -34,7 +35,8 @@
         "three": ">=0.160.0"
     },
     "devDependencies": {
-        "@types/three": "^0.170.0",
-        "three": "^0.170.0"
+        "@types/three": "^0.186.0",
+        "three": "^0.186.1",
+        "three-min": "npm:three@0.160.0"
     }
 }

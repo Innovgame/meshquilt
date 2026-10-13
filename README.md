@@ -54,6 +54,7 @@ mesh.parent?.add(group);
 ## Limits
 
 - The source mesh has one material. Split multi-material groups before encoding.
+- Bake skinned, instanced and morph-target meshes to static geometry. Extract partial draw ranges before encoding.
 - UV item size is 2. Normal and position item size is 3.
 - Smooth normals must be computed on the complete mesh before the split. Per-chunk normals turn the cut into a hard edge.
 - A bit count of `0` skips quantization for that attribute. Defaults are 14 position bits, 8 normal bits, and 10 UV bits.
@@ -75,16 +76,19 @@ See [website setup](apps/site/README.md) for GitHub Pages deployment. The Pages 
 
 ## Development
 
-Node.js 22 and pnpm 10+.
+Node.js 22.12+, 24+ or 26+, with pnpm 10.33.0.
 
 ```bash
 pnpm install
 pnpm check
 pnpm test
+pnpm test:packages
 pnpm build
 ```
 
 `pnpm check` runs Prettier, ESLint, and the TypeScript project. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Encoding generates chunks lazily, but still keeps the source geometry and complete compressed output. See [runtime, memory and cancellation](docs/runtime-and-memory.md) for ownership, Worker failure semantics and zero-copy decoding. TypeScript 7 runs builds; a parallel TypeScript 6 installation supplies the API required by the current ESLint parser.
 
 ## License
 

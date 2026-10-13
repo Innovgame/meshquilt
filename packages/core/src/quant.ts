@@ -1,4 +1,4 @@
-import { MeshQuiltError, type GeometryBuffers, type QuantVolume, type SharedQuantization } from "./types";
+import { MeshQuiltError, type GeometryBuffers, type QuantVolume, type SharedQuantization } from "./types.js";
 
 export const DEFAULT_POSITION_BITS = 14;
 export const DEFAULT_NORMAL_BITS = 8;
@@ -19,6 +19,7 @@ export interface QuantBits {
  * keeps identical inputs identical. The encoder still does the real snap.
  */
 export function quantizeComponent(value: number, origin: number, range: number, bits: number): number {
+    assertBits("bits", bits);
     if (bits <= 0) return value;
     const maxQ = (1 << bits) - 1;
     const safeRange = range === 0 ? 1 : range;
@@ -29,7 +30,7 @@ export function quantizeComponent(value: number, origin: number, range: number, 
 }
 
 export function computeVolume(values: Float32Array, stride: number): QuantVolume {
-    if (stride < 1) throw new MeshQuiltError("stride must be >= 1");
+    if (!Number.isInteger(stride) || stride < 1) throw new MeshQuiltError("stride must be an integer >= 1");
     if (values.length % stride !== 0) {
         throw new MeshQuiltError(`attribute length ${values.length} is not divisible by ${stride}`);
     }
@@ -41,6 +42,7 @@ export function computeVolume(values: Float32Array, stride: number): QuantVolume
     for (let i = 0; i < values.length; i += stride) {
         for (let c = 0; c < stride; c++) {
             const value = values[i + c]!;
+            if (!Number.isFinite(value)) throw new MeshQuiltError("attribute values must be finite");
             if (value < origin[c]!) origin[c] = value;
             if (value > max[c]!) max[c] = value;
         }
@@ -50,7 +52,27 @@ export function computeVolume(values: Float32Array, stride: number): QuantVolume
         const span = max[c]! - origin[c]!;
         if (span > range) range = span;
     }
-    return { origin, range: range === 0 ? 1 : range };
+    return normalizeVolume({ origin, range: range === 0 ? 1 : range }, stride);
+}
+
+/** Match the float32 representation used by the MQLT header before calling any codec. */
+export function normalizeVolume(volume: QuantVolume, dimensions: number): QuantVolume {
+    if (volume.origin.length !== dimensions)
+        throw new MeshQuiltError(`volume origin must have ${dimensions} components`);
+    const origin = Array.from(volume.origin, Math.fround);
+    const range = Math.fround(volume.range);
+    if (!origin.every(Number.isFinite) || !Number.isFinite(range) || range <= 0) {
+        throw new MeshQuiltError("volume must have finite float32 origins and a positive finite float32 range");
+    }
+    return { origin, range };
+}
+
+export function validateQuantization(quant: SharedQuantization): void {
+    assertBits("positionBits", quant.positionBits);
+    assertBits("normalBits", quant.normalBits);
+    assertBits("uvBits", quant.uvBits);
+    normalizeVolume(quant.position, 3);
+    if (quant.uv) normalizeVolume(quant.uv, 2);
 }
 
 export function assertBits(name: string, bits: number): void {

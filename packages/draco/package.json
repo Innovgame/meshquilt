@@ -27,9 +27,17 @@
         "README.md"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json"
+        "build": "node ../../node_modules/typescript-compiler/bin/tsc -p tsconfig.json && node scripts/build-worker.mjs",
+        "prepack": "pnpm --filter @meshquilt/core build && pnpm build",
+        "test:browser": "node scripts/test-browser.mjs"
     },
     "dependencies": {
         "@meshquilt/core": "workspace:*"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.64.0",
+        "@types/draco3d": "^1.4.10",
+        "draco3d": "1.5.7",
+        "esbuild": "^0.28.2"
     }
 }

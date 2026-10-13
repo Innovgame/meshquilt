@@ -7,7 +7,6 @@ import {
     Braces,
     Check,
     Cpu,
-    Github,
     Layers3,
     Network,
     Package,
@@ -16,6 +15,7 @@ import {
     Workflow
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Github } from "@/components/github-icon";
 import { githubUrl, version } from "@/lib/config";
 import { encodeExample, workerExample } from "@/lib/docs";
 import { useSite } from "@/lib/site-context";

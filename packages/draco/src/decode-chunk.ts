@@ -1,5 +1,5 @@
 import { MeshQuiltError, type ChunkGeometry } from "@meshquilt/core";
-import type { DracoDecoder, DracoDecoderModule, DracoFloat32Array, DracoMesh } from "./types";
+import type { DracoDecoder, DracoDecoderModule, DracoFloat32Array, DracoMesh } from "./types.js";
 
 export function decodeDracoChunk(module: DracoDecoderModule, bytes: Uint8Array): ChunkGeometry {
     const decoder = new module.Decoder();

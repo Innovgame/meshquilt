@@ -1,4 +1,4 @@
-import { MeshQuiltError, type ChunkGeometry, type GeometryBuffers } from "./types";
+import { MeshQuiltError, type ChunkGeometry, type GeometryBuffers } from "./types.js";
 
 export function validateGeometry(geometry: GeometryBuffers): void {
     if (geometry.position.length === 0 || geometry.position.length % 3 !== 0) {
@@ -20,6 +20,16 @@ export function validateGeometry(geometry: GeometryBuffers): void {
     if (geometry.uv && geometry.uv.length !== vertexCount * 2) {
         throw new MeshQuiltError("uv length must be twice the vertex count");
     }
+    for (const [name, values] of Object.entries({
+        position: geometry.position,
+        normal: geometry.normal,
+        uv: geometry.uv
+    })) {
+        if (!values) continue;
+        for (const value of values) {
+            if (!Number.isFinite(value)) throw new MeshQuiltError(`${name} values must be finite`);
+        }
+    }
 }
 
 /**
@@ -28,14 +38,21 @@ export function validateGeometry(geometry: GeometryBuffers): void {
  * The single-chunk path returns the original arrays.
  */
 export function splitGeometry(geometry: GeometryBuffers, maxTriangles: number): ChunkGeometry[] {
+    return Array.from(iterateGeometry(geometry, maxTriangles));
+}
+
+/** Produces one chunk at a time; the single-chunk path aliases the input arrays. */
+export function* iterateGeometry(geometry: GeometryBuffers, maxTriangles: number): Generator<ChunkGeometry> {
     validateGeometry(geometry);
     if (!Number.isInteger(maxTriangles) || maxTriangles < 1) {
         throw new MeshQuiltError("maxTriangles must be an integer >= 1");
     }
     const triangleCount = geometry.index.length / 3;
-    if (triangleCount <= maxTriangles) return [geometry];
+    if (triangleCount <= maxTriangles) {
+        yield geometry;
+        return;
+    }
 
-    const chunks: ChunkGeometry[] = [];
     const vertexMap = new Map<number, number>();
     const positions = new Float32Array(maxTriangles * 9);
     const indices = new Uint32Array(maxTriangles * 3);
@@ -51,10 +68,10 @@ export function splitGeometry(geometry: GeometryBuffers, maxTriangles: number): 
         };
         if (normals && geometry.normal) chunk.normal = normals.slice(0, localVertices * 3);
         if (uvs && geometry.uv) chunk.uv = uvs.slice(0, localVertices * 2);
-        chunks.push(chunk);
         vertexMap.clear();
         localVertices = 0;
         localTriangles = 0;
+        return chunk;
     };
 
     for (let i = 0; i < geometry.index.length; i += 3) {
@@ -75,8 +92,7 @@ export function splitGeometry(geometry: GeometryBuffers, maxTriangles: number): 
             indices[localTriangles * 3 + corner] = local;
         }
         localTriangles++;
-        if (localTriangles >= maxTriangles) flush();
+        if (localTriangles >= maxTriangles) yield flush();
     }
-    if (localTriangles > 0) flush();
-    return chunks;
+    if (localTriangles > 0) yield flush();
 }

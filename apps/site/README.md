@@ -1,6 +1,6 @@
 # MeshQuilt website
 
-The independent project website for GitHub Pages. Built with React 19, Vite 6, Tailwind CSS 4, shadcn-style Radix components, Lucide, and Three.js. No demo code or demo assets are used.
+The independent project website for GitHub Pages. Built with React 19, Vite 8, Tailwind CSS 4, shadcn-style Radix components, Lucide, and Three.js. No demo code or demo assets are used.
 
 ## Development
 
