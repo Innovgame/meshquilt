@@ -1,0 +1,59 @@
+name: GitHub Pages
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: pages-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build:
+        runs-on: ubuntu-24.04
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10.33.0
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - name: Install browser for website checks
+              run: pnpm --filter @meshquilt/site exec playwright install --with-deps chromium
+            - name: Verify website interactions and accessibility
+              run: pnpm site:test
+            - name: Build website
+              run: pnpm site:build
+              env:
+                  SITE_BASE: ${{ vars.SITE_BASE }}
+                  VITE_SITE_URL: ${{ vars.VITE_SITE_URL }}
+                  VITE_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+            - uses: actions/upload-pages-artifact@v3
+              if: github.event_name != 'pull_request'
+              with:
+                  path: apps/site/dist
+
+    deploy:
+        if: github.event_name != 'pull_request'
+        needs: build
+        runs-on: ubuntu-24.04
+        permissions:
+            pages: write
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

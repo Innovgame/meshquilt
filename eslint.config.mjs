@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig([
     {
-        ignores: ["**/dist/**", "**/node_modules/**", "coverage/**", "packages/draco/worker/**"]
+        ignores: ["**/dist/**", "**/node_modules/**", ".tmp/**", "coverage/**", "packages/draco/worker/**"]
     },
     eslint.configs.recommended,
     ...tseslint.configs.recommended,
@@ -19,7 +19,7 @@ export default defineConfig([
         }
     },
     {
-        files: ["**/*.ts"],
+        files: ["**/*.ts", "**/*.tsx"],
         rules: {
             eqeqeq: ["error", "always"],
             "no-var": "error",

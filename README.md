@@ -18,6 +18,7 @@ Version `0.1.0`. Changes are in [CHANGELOG.md](CHANGELOG.md).
 | `@meshquilt/three` | Read a `THREE.Mesh` and draw decoded chunks as a `Group`.                      |
 | `@meshquilt/draco` | Draco encode and decode adapters, plus a worker pool.                          |
 | `@meshquilt/demo`  | Browser page for the split and the seam check.                                 |
+| `@meshquilt/site`  | Independent project website and searchable documentation for GitHub Pages.     |
 
 ## Quick start
 
@@ -59,6 +60,18 @@ mesh.parent?.add(group);
 - The demo does not ship `draco_encoder.js`. Load a Draco build yourself. Draco is Apache-2.0.
 
 Details are in [quantization](docs/quantization.md) and the [container format](docs/container-format.md).
+
+## Project website
+
+The independent React website includes a live mesh splitting visualization, searchable documentation, English/Chinese content, and light/dark themes.
+
+```bash
+pnpm site
+pnpm site:build
+pnpm site:preview
+```
+
+See [website setup](apps/site/README.md) for GitHub Pages deployment. The Pages workflow deploys `apps/site/dist` from `main`; choose **GitHub Actions** as the Pages source in repository settings.
 
 ## Development
 

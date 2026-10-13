@@ -21,6 +21,17 @@ pnpm test
 
 `pnpm check` runs Prettier, ESLint, and `tsc --noEmit`. Run `pnpm build` when you change package exports or the demo.
 
+## Website development
+
+Run `pnpm site` to start the independent React website. See [website setup](apps/site/README.md) for the design, content, and Pages configuration. When changing website behavior, install Chromium once and run the browser checks:
+
+```bash
+pnpm --filter @meshquilt/site exec playwright install chromium
+pnpm site:test
+```
+
+The browser suite checks desktop/mobile layouts, document routes under a Pages subpath, keyboard controls, search, language/theme persistence, code copying, WebGL fallback, and accessibility. Keep Chinese translations aligned with their source Markdown.
+
 ## Commits
 
 Use a short English conventional commit, such as `fix:`, `feat:`, `docs:`, or `ci:`. Say what a user can observe.

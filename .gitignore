@@ -29,3 +29,7 @@ pnpm-debug.log*
 
 # Local
 *.local
+
+# Browser verification
+playwright-report/
+test-results/

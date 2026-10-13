@@ -18,6 +18,7 @@
 | `@meshquilt/three` | 读取 `THREE.Mesh`，把解码后的块放进一个 `Group`。                  |
 | `@meshquilt/draco` | Draco 编解码适配，以及 worker 池。                                 |
 | `@meshquilt/demo`  | 在浏览器里看分块和接缝。                                           |
+| `@meshquilt/site`  | 独立的开源官网与可搜索文档，用于 GitHub Pages。                    |
 
 ## 快速开始
 
@@ -59,6 +60,18 @@ mesh.parent?.add(group);
 - 演示页不附带 `draco_encoder.js`。Draco 构建需要自己加载。Draco 使用 Apache-2.0。
 
 细节见 [量化与接缝](docs/quantization.md) 和 [容器格式](docs/container-format.md)。
+
+## 项目官网
+
+独立的 React 官网包含真实网格分块交互、可搜索文档、中英文切换和明暗主题。
+
+```bash
+pnpm site
+pnpm site:build
+pnpm site:preview
+```
+
+GitHub Pages 部署说明见 [官网 README](apps/site/README.md)。在仓库 Settings → Pages 中选择 GitHub Actions，工作流将在 main 分支更新后部署。
 
 ## 开发
 
