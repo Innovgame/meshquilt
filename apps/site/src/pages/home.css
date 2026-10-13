@@ -5,7 +5,7 @@
 }
 .hero-runtime-link {
     margin-top: 20px;
-    font-size: 12px;
+    font-size: var(--text-small);
 }
 .execution-section {
     padding-top: 0;
@@ -34,7 +34,7 @@
     padding: 12px;
     background: transparent;
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--text-ui);
     font-weight: 500;
 }
 .execution-tabs button[data-state="active"] {
@@ -57,7 +57,7 @@
     min-width: 0;
 }
 .execution-api {
-    font-size: 12px;
+    font-size: var(--text-small);
     color: var(--accent);
     overflow-wrap: anywhere;
 }
@@ -72,7 +72,7 @@
 .execution-copy > p,
 .ownership-note p,
 .execution-tradeoff {
-    font-size: 14px;
+    font-size: var(--text-body);
     color: var(--muted);
     line-height: 1.8;
 }
@@ -82,7 +82,7 @@
     display: grid;
     gap: 13px;
     margin-block: 20px;
-    font-size: 13px;
+    font-size: var(--text-body);
     line-height: 1.6;
 }
 .execution-copy li {
@@ -96,7 +96,7 @@
     color: var(--mint);
 }
 .execution-copy .text-link {
-    font-size: 13px;
+    font-size: var(--text-ui);
 }
 .thread-diagram {
     display: grid;
@@ -119,7 +119,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: var(--text-nav);
     font-weight: 500;
     margin-bottom: 14px;
 }
@@ -138,7 +138,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: var(--text-small);
     min-width: 0;
 }
 .thread-steps li > span {
@@ -156,13 +156,13 @@
 .ownership-note strong {
     display: block;
     margin-bottom: 5px;
-    font-size: 13px;
+    font-size: var(--text-nav);
     font-weight: 500;
 }
 .execution-tradeoff {
     border-top: 1px solid var(--line);
     padding-top: 14px;
-    font-size: 12px;
+    font-size: var(--text-body);
 }
 .performance-section {
     padding-block: 80px;
@@ -177,7 +177,7 @@
     margin-bottom: 24px;
 }
 .benchmark-toolbar > span {
-    font-size: 13px;
+    font-size: var(--text-small);
     color: var(--muted);
 }
 .fixture-switch {
@@ -192,7 +192,7 @@
     background: transparent;
     border: 1px solid transparent;
     padding: 10px 16px;
-    font-size: 13px;
+    font-size: var(--text-ui);
     min-height: 44px;
     border-radius: 5px;
     color: var(--muted);
@@ -218,7 +218,7 @@
 }
 .benchmark-table thead {
     background: var(--surface-soft);
-    font-size: 12px;
+    font-size: var(--text-small);
     color: var(--muted);
 }
 .benchmark-table th {
@@ -228,7 +228,7 @@
     width: 28%;
 }
 .benchmark-table tbody th {
-    font-size: 14px;
+    font-size: var(--text-nav);
     line-height: 1.6;
 }
 .benchmark-table tbody tr + tr {
@@ -241,7 +241,7 @@
     font-variant-numeric: tabular-nums;
 }
 .benchmark-table td strong > span {
-    font-size: 13px;
+    font-size: var(--text-small);
     color: var(--muted);
 }
 .benchmark-key {
@@ -283,14 +283,14 @@
     margin-top: 22px;
 }
 .benchmark-method p {
-    font-size: 12px;
+    font-size: var(--text-small);
     line-height: 1.8;
     color: var(--muted);
     max-width: 740px;
 }
 .benchmark-method .text-link {
     flex-shrink: 0;
-    font-size: 13px;
+    font-size: var(--text-ui);
     min-height: 30px;
 }
 .preparation-note {
@@ -307,7 +307,7 @@
     font-weight: 500;
 }
 .preparation-note p {
-    font-size: 13px;
+    font-size: var(--text-body);
     color: var(--muted);
     line-height: 1.8;
     margin-top: 6px;
@@ -327,7 +327,7 @@
     white-space: nowrap;
 }
 .preparation-note > a > span {
-    font-size: 12px;
+    font-size: var(--text-small);
     line-height: 1.6;
     color: var(--muted);
 }
@@ -335,7 +335,7 @@
     margin-top: 17px;
     text-align: center;
     color: var(--muted);
-    font-size: 13px;
+    font-size: var(--text-body);
     line-height: 1.8;
 }
 .renderer-note a {
@@ -385,7 +385,7 @@
         padding: 23px 18px;
     }
     .execution-tabs button {
-        font-size: 12px;
+        font-size: var(--text-ui);
         padding-inline: 8px;
     }
     .execution-copy h3 {
@@ -432,12 +432,12 @@
         font-size: 22px;
     }
     .benchmark-table td strong > span {
-        font-size: 12px;
+        font-size: var(--text-small);
     }
     .benchmark-mobile-label {
         display: block;
         min-height: 38px;
-        font-size: 11px;
+        font-size: var(--text-small);
         color: var(--muted);
         line-height: 1.5;
         margin-bottom: 8px;
