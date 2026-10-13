@@ -4,7 +4,7 @@
 
 面向原始几何数组的 TypeScript 网格编解码库：将三角网格分块、并行压缩，解码后的块共享量化网格，避免边界裂缝。
 
-版本0.1.0，见 [CHANGELOG.md](CHANGELOG.md)。单包重构没有改变 MQLT 格式与量化默认值。
+版本 0.2.0，见 [CHANGELOG.md](CHANGELOG.md)。单包重构没有改变 MQLT 格式与量化默认值。
 
 ## 一个发布包，三个入口
 

@@ -35,7 +35,7 @@ pnpm release:check v0.1.1
 
 This command is read-only. It rejects an incorrect tag, mismatched workspace/package versions, a private/wrong package, unarchived changes and missing release notes. Stable versions use npm tag `latest`; prerelease versions use `next`. Development checks intentionally continue to pass with an `Unreleased` section containing changes; only the release guard blocks publishing that state.
 
-The current development work remains under `Unreleased`. Do not publish it under the old `v0.1.0` tag.
+Do not publish `Unreleased` changes under an existing tag. Move them into the target version first.
 
 ## Optional GitHub release workflow
 

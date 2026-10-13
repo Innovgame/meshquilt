@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Version0.1.0. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.2.0. See [CHANGELOG.md](CHANGELOG.md).
 
 Array-first TypeScript mesh codec. Split triangle geometry, compress chunks independently, and keep neighboring chunks on one quantization grid.
 

@@ -30,7 +30,7 @@ pnpm --filter meshquilt pack --pack-destination .tmp/release
 pnpm release:check v0.1.1
 ```
 
-普通校验只读，不修改文件。它拒绝标签/版本不一致、错误包名、私有包、未归档变更或缺失发布说明。稳定版本使用 latest，预发布版本使用 next。当前改动仍在 Unreleased，不能按旧 v0.1.0 标签发布。
+普通校验只读，不修改文件。它拒绝标签/版本不一致、错误包名、私有包、未归档变更或缺失发布说明。稳定版本使用 latest，预发布版本使用 next。不要把 Unreleased 改动发布到已有标签下，先归档到目标版本。
 
 ## 可选 GitHub 工作流
 

@@ -2,21 +2,13 @@
 
 ## Unreleased
 
-- 新增无运行时依赖的 `mergeGeometry`，将索引或无索引几何合并为独立 Uint32 索引缓冲区，不焊接、不再次量化。法线/UV 混合缺失时拒绝合并；网站改用库接口，导入策略与预览限制仍由 site 负责。
-- 网站预览新增“分块 / 整体”显示切换，整体使用一个合并网格和统一材质，保留 UV、法线、接缝重复顶点、文件分块统计与导出设置，不进行拓扑焊接。
-- 将网站实时几何预览扩展为本地 STL/OBJ/GLB/MQLT 体验区，支持真实分块与精度设置、可取消的 Worker 编解码、MQLT 下载及原始/解码模型对比。保留模型坐标与导入文件的分块边界，Draco 资源随网站部署并兼容 Pages 子路径。
-- 移除重复 demo 应用，Three.js 完整说明统一到中英文文档。库浏览器测试无需网站服务器，CI 复用已构建产物。旧量化辅助 API 移入兼容模块并标记弃用，保持现有调用可用。
-- 新增标准 TypeScript Vitest 性能基准与 Playwright Worker/响应性测量，共享夹具并移除独立 Worker 集成脚本。
-- 优化无索引分块、索引映射、属性复制和重复校验，Draco 解码采用可选批量 API 与兼容回退。
-- 新增整体 encodeDracoInWorker，支持显式所有权转移、类型化进度和取消。
+## 0.2.0
 
-- 新增发布标签、版本和更新记录校验，以及默认仅验收安装包的手动发布工作流。实际仓库元数据在 GitHub 发布环境中生成，本地不配置远程或发布。
-
-- 归并为一个 meshquilt 发布包，提供根、Draco及Worker三个入口。
-- Three.js转换代码与测试移入私有示例，不再作为依赖或独立包发布。
-- 新增 GeometryInput，支持Uint16/Uint32索引与无索引三角网格，按块生成索引。
-- 编码/解码提供类型化进度，保留MQLT v1、量化默认值与取消行为。
-- 加固Worker生命周期、失败调度、数值/容器校验、ESM发布产物，升级工具链并增加回归验证。
+- 只发布 `meshquilt`、`meshquilt/draco` 和 `meshquilt/worker`。不再发布 Three.js 适配器。MQLT v1 不变。
+- 接受 Uint16、Uint32 和无索引几何。编码和解码会报告进度。
+- 新增 `mergeGeometry` 和 `encodeDracoInWorker`。
+- Worker 在释放、超时或失败时取消进行中的任务。
+- 网站可导入 STL、OBJ、GLB 和 MQLT，并对比解码结果。
 
 ## 0.1.0
 
