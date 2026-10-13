@@ -43,11 +43,11 @@ npm install meshquilt
 
 ## 入口
 
-| 导入入口           | 职责                                                    |
-| ------------------ | ------------------------------------------------------- |
-| `meshquilt`        | 几何、分块、共享量化、合并，以及 MQLT 容器。           |
-| `meshquilt/draco`  | 可注入的 Draco 适配器和浏览器 Worker 池。               |
-| `meshquilt/worker` | 经典 Worker 文件，由应用自行部署。                      |
+| 导入入口           | 职责                                         |
+| ------------------ | -------------------------------------------- |
+| `meshquilt`        | 几何、分块、共享量化、合并，以及 MQLT 容器。 |
+| `meshquilt/draco`  | 可注入的 Draco 适配器和浏览器 Worker 池。    |
+| `meshquilt/worker` | 经典 Worker 文件，由应用自行部署。           |
 
 没有发布 Three.js 适配器。材质、变换和模型加载属于应用。测试过的接入代码在 [`examples/three`](examples/three/README.md)。
 

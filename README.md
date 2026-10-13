@@ -43,11 +43,11 @@ The same release is also published as `@innovgame/meshquilt` on GitHub Packages.
 
 ## Entrypoints
 
-| Import              | Responsibility                                                              |
-| ------------------- | --------------------------------------------------------------------------- |
-| `meshquilt`         | Geometry, splitting, shared quantization, merge, and the MQLT container.   |
-| `meshquilt/draco`   | Injected Draco adapters and a browser Worker pool.                          |
-| `meshquilt/worker`  | Classic Worker asset. Your application serves it.                           |
+| Import             | Responsibility                                                           |
+| ------------------ | ------------------------------------------------------------------------ |
+| `meshquilt`        | Geometry, splitting, shared quantization, merge, and the MQLT container. |
+| `meshquilt/draco`  | Injected Draco adapters and a browser Worker pool.                       |
+| `meshquilt/worker` | Classic Worker asset. Your application serves it.                        |
 
 There is no published Three.js adapter. Materials, transforms, and model loading belong to your application. A tested integration lives in [`examples/three`](examples/three/README.md).
 
