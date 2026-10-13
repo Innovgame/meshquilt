@@ -1,0 +1,40 @@
+{
+    "name": "@meshquilt/three",
+    "version": "0.1.0",
+    "description": "THREE.Mesh adapter for MeshQuilt.",
+    "type": "module",
+    "license": "MIT",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "keywords": [
+        "3d",
+        "mesh",
+        "three",
+        "compression"
+    ],
+    "sideEffects": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+        "@meshquilt/core": "workspace:*"
+    },
+    "peerDependencies": {
+        "three": ">=0.160.0"
+    },
+    "devDependencies": {
+        "@types/three": "^0.170.0",
+        "three": "^0.170.0"
+    }
+}

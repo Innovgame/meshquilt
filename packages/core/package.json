@@ -1,0 +1,30 @@
+{
+    "name": "@meshquilt/core",
+    "version": "0.1.0",
+    "description": "Split triangle meshes into chunks and pack them with a shared quantization volume.",
+    "type": "module",
+    "license": "MIT",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "keywords": [
+        "3d",
+        "mesh",
+        "compression",
+        "quantization"
+    ],
+    "sideEffects": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    }
+}

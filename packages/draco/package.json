@@ -1,0 +1,35 @@
+{
+    "name": "@meshquilt/draco",
+    "version": "0.1.0",
+    "description": "Draco encoder and decoder adapters for MeshQuilt chunks.",
+    "type": "module",
+    "license": "MIT",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./worker": "./worker/encode.worker.js"
+    },
+    "keywords": [
+        "3d",
+        "mesh",
+        "draco",
+        "compression"
+    ],
+    "sideEffects": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist",
+        "worker",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+        "@meshquilt/core": "workspace:*"
+    }
+}

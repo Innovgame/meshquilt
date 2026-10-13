@@ -1,0 +1,31 @@
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Tool caches
+.vite/
+.turbo/
+.tmp/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# IDE and editor
+.idea/
+.DS_Store
+*.code-workspace
+*.sublime-workspace
+*.suo
+*.swp
+*.swo
+*~
+
+# Local
+*.local
