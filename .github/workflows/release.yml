@@ -37,7 +37,7 @@ jobs:
                   git show-ref --verify "refs/tags/$RELEASE_TAG"
                   git merge-base --is-ancestor "refs/tags/$RELEASE_TAG" origin/main
                   # The workflow ref is the release tag, so npm provenance identifies its commit.
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
               with:
                   version: 10.33.0
             - uses: actions/setup-node@v4
