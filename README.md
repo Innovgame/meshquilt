@@ -1,7 +1,7 @@
 <h1 align="center">MeshQuilt</h1>
 <h3 align="center">
-  Large meshes. One shared grid.<br />
-  Array-first TypeScript mesh codec
+  Fast Draco for large meshes, in the browser.<br />
+  Smaller files. One shared grid.
 </h3>
 
 <p align="center">
@@ -36,10 +36,10 @@ The same release is also published as `@innovgame/meshquilt` on GitHub Packages.
 
 ## Why MeshQuilt?
 
-- **One grid for every chunk.** Positions and UVs are quantized against one volume, so a vertex copied onto a chunk boundary stays on the same grid.
-- **Array-first.** Typed arrays in, typed arrays out. The root import has no runtime dependencies and does not load Draco, Three.js, or Workers.
-- **Independent chunk compression.** Inject your own Draco encoder, or move the pipeline into a Worker. Draco binaries stay in your application.
-- **An explicit container.** Encoded chunks are packed in MQLT. Decoding returns independent chunks for your renderer.
+- **Fast Draco in the browser.** Split a large mesh and encode or decode the chunks off the main thread. A Worker pool runs chunks in parallel, or one Worker runs the whole pipeline.
+- **Much smaller files.** Positions, normals, and UVs are quantized and packed with Draco into an MQLT container, instead of shipping the raw vertex buffers.
+- **One grid for every chunk.** Every chunk uses the same quantization volume, so a boundary vertex stays on the same grid after compression.
+- **Array-first.** Typed arrays in, typed arrays out. The root import has no runtime dependencies. You supply the Draco binaries.
 
 ## Entrypoints
 
