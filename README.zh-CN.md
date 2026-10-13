@@ -22,6 +22,8 @@
 npm install meshquilt
 ```
 
+同一版本也会发布到 GitHub Packages，包名是 `@innovgame/meshquilt`。
+
 若包尚未发布到你的注册源，请使用本地 pnpm 工作区。
 
 ```ts

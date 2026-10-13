@@ -37,15 +37,15 @@ This command is read-only. It rejects an incorrect tag, mismatched workspace/pac
 
 Do not publish `Unreleased` changes under an existing tag. Move them into the target version first.
 
-## Optional GitHub release workflow
+## Release workflow
 
-The checked-in `npm release` workflow is run manually. Select an existing `vX.Y.Z` tag in **Use workflow from**; that tag must already contain the workflow. Running from a branch fails with an explanation. This keeps the workflow source commit and npm provenance aligned with the packaged release. The `publish` checkbox defaults to false. The package job confirms the tag belongs to `main`, runs library/package/Worker checks, validates release notes and produces a downloadable npm archive. It then runs `npm publish --dry-run`, without writing to the registry.
+`.github/workflows/release.yml` must run from an existing `vX.Y.Z` tag. Running from a branch fails. Publishing a GitHub Release for that tag publishes the registries. A manual run stays a dry run unless `publish` is selected.
 
-Repository metadata is generated from GitHub's real `GITHUB_REPOSITORY` only inside that release checkout. The source package intentionally has no invented repository/homepage/bugs URLs while it remains local. `release:check --prepare` explicitly writes metadata and requires the actual owner/repository; normal local checks never do this.
+The package job confirms the tag belongs to `main`, runs the library checks, writes repository metadata from `GITHUB_REPOSITORY`, and packs two archives. npm receives `meshquilt`. GitHub Packages receives `@<owner>/meshquilt`, because that registry only accepts a scope matching the repository owner. The source package name stays `meshquilt`.
 
-For a future actual publish, configure the `meshquilt` npm package's trusted publisher with the GitHub owner/repository, workflow filename `release.yml`, and environment `npm-release`. Enable environment reviewers if you want an approval before publishing. The publish job uses OIDC, publishes the already verified archive and requests provenance. It does not use an npm token stored in source. The registry must already have the trusted publishing relationship configured; first publication or ownership setup may need to be completed separately on npm.
+Registry publication uses the `npm-release` environment. npm uses the `NPM_TOKEN` repository secret and requests provenance. GitHub Packages uses `GITHUB_TOKEN`. Neither token is stored in source. Add environment reviewers if a publish should wait for approval.
 
-The workflow uses Node.js 24, whose supported npm version must support trusted publishing. npm publish is executed only when `publish` is selected. No workflow run, remote configuration, tagging or npm publishing is performed by adding these files locally.
+No workflow run, remote configuration, tagging, or registry publishing happens just by adding these files locally.
 
 ## Compatibility and distribution
 

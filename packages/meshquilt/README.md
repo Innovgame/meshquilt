@@ -8,6 +8,8 @@ Array-first TypeScript mesh codec. Split triangle geometry, compress chunks inde
 npm install meshquilt
 ```
 
+The same release is also published to GitHub Packages as `@innovgame/meshquilt`.
+
 ## Encode
 
 ```ts
