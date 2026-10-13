@@ -8,11 +8,11 @@
 
 ## 一个发布包，三个入口
 
-| 导入入口         | 职责                                                    |
-| ---------------- | ------------------------------------------------------- |
-| meshquilt        | 几何类型、惰性分块、共享量化、MQLT 容器和编解码流水线。 |
-| meshquilt/draco  | 可注入的 Draco 编解码适配器及浏览器 Worker 池。         |
-| meshquilt/worker | 由应用部署的经典 Worker 文件。                          |
+| 导入入口         | 职责                                                              |
+| ---------------- | ----------------------------------------------------------------- |
+| meshquilt        | 几何类型、惰性分块、数组合并、共享量化、MQLT 容器和编解码流水线。 |
+| meshquilt/draco  | 可注入的 Draco 编解码适配器及浏览器 Worker 池。                   |
+| meshquilt/worker | 由应用部署的经典 Worker 文件。                                    |
 
 发布包没有运行时依赖或 peer dependency。Three.js 接入代码位于私有 [examples/three](examples/three/README.md) 示例，不再独立发布。根工作区与官网也不发布。
 
@@ -43,6 +43,16 @@ const { chunks } = await decodeGeometry(bytes, (payload) => decodeDracoChunk(dec
 输入支持 Uint16/Uint32 索引；省略索引表示逐三个顶点组成三角形。可选法线和 UV 为逐顶点属性；编码器输入与解码结果统一使用 Uint32 索引。文件加载、材质、变换及绘制由应用负责，平滑法线应在完整网格上预计算。默认位置14位、法线8位、UV10位，0表示禁用该属性量化。
 
 并行编码使用2–4个 Worker，concurrency 与池大小匹配。单个 Draco 模块不可重入。应用自行提供编码脚本与匹配的 WASM。onProgress 提供阶段、已完成块数与总块数；取消使用 AbortSignal。
+
+## 合并解码后的分块
+
+```ts
+import { mergeGeometry } from "meshquilt";
+
+const geometry = mergeGeometry(chunks);
+```
+
+合并是可选步骤，输出独立缓冲区和 Uint32 索引，保留接缝重复顶点、法线与 UV，不焊接、不再次量化。每种可选属性必须在所有输入中都存在或都不存在，混合缺失会报错。创建 Mesh、材质与预览容量限制由应用负责。见[几何 API](docs/zh/geometry.md#合并几何)。
 
 ## 文档与官网
 

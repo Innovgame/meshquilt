@@ -31,7 +31,7 @@ const decoded = await decodeGeometry(bytes, (payload) => decodeDracoChunk(decode
 
 ## Entrypoints
 
-- `meshquilt`: geometry types, lazy splitter, shared quantization, MQLT container and codec callback pipeline. No runtime dependencies.
+- `meshquilt`: geometry types, lazy splitter, buffer merger, shared quantization, MQLT container and codec callback pipeline. No runtime dependencies.
 - `meshquilt/draco`: injected Draco adapters and a browser Worker pool.
 - `meshquilt/worker`: generated classic Worker asset, deployed by your application.
 
@@ -44,6 +44,16 @@ GeometryInput accepts tightly packed Float32Array position, optional normal/UV a
 The single-chunk Uint32 path aliases source geometry. Small Uint16/nonindexed inputs normalize their index while sharing attributes; multi-chunk splits copy attributes. Do not mutate or detach input arrays while encoding.
 
 Defaults are position14, normal8 and UV10 bits. Set an attribute's bits to0 to skip quantization. Every chunk shares the same float32-normalized volume. Explicit volumes need finite origins, positive finite float32 ranges and must cover input values.
+
+## Merge decoded chunks
+
+```ts
+import { mergeGeometry } from "meshquilt";
+
+const geometry = mergeGeometry(decoded.chunks);
+```
+
+The synchronous merger accepts a readonly list of GeometryInput and returns GeometryBuffers with Uint32 indices and independently owned attribute buffers. Input order and duplicate seam vertices are preserved; it does not weld, recompute normals, requantize, or create a Mesh. Normals/UVs must each be present on every input or absent from every input; mixed presence and invalid geometry throw MeshQuiltError. Merging requires a complete additional geometry allocation and remains optional after decodeGeometry.
 
 ## Worker pool
 

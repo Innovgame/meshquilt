@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { computeVolume, splitGeometry, validateGeometry } from "meshquilt";
+import { computeVolume, mergeGeometry, MeshQuiltError, splitGeometry, validateGeometry } from "meshquilt";
 import type { ChunkGeometry, GeometryInput, QuiltHeader } from "meshquilt";
 import { triangleCount } from "./mesh-metrics.js";
 import { MAX_CHUNKS, MAX_TRIANGLES, MAX_VERTICES } from "./mesh-limits.js";
@@ -25,28 +25,13 @@ export function checkModel(geometry: GeometryInput) {
     validateGeometry(geometry);
 }
 
-export function mergeChunks(chunks: GeometryInput[]): ChunkGeometry {
+/** Preview capacity policy only; actual buffer merging belongs to the library. */
+export function mergePreviewGeometry(chunks: readonly GeometryInput[]): ChunkGeometry {
     if (!chunks.length) throw new ModelError("empty");
     const vertices = chunks.reduce((sum, chunk) => sum + chunk.position.length / 3, 0);
     const indices = chunks.reduce((sum, chunk) => sum + (chunk.index?.length ?? chunk.position.length / 3), 0);
     if (vertices > MAX_VERTICES || indices / 3 > MAX_TRIANGLES) throw new ModelError("limit");
-    const result: ChunkGeometry = { position: new Float32Array(vertices * 3), index: new Uint32Array(indices) };
-    if (chunks.every((chunk) => chunk.normal)) result.normal = new Float32Array(vertices * 3);
-    if (chunks.every((chunk) => chunk.uv)) result.uv = new Float32Array(vertices * 2);
-    let vertexOffset = 0;
-    let indexOffset = 0;
-    for (const chunk of chunks) {
-        validateGeometry(chunk);
-        result.position.set(chunk.position, vertexOffset * 3);
-        if (result.normal && chunk.normal) result.normal.set(chunk.normal, vertexOffset * 3);
-        if (result.uv && chunk.uv) result.uv.set(chunk.uv, vertexOffset * 2);
-        const count = chunk.index?.length ?? chunk.position.length / 3;
-        for (let i = 0; i < count; i++) result.index[indexOffset + i] = vertexOffset + (chunk.index?.[i] ?? i);
-        vertexOffset += chunk.position.length / 3;
-        indexOffset += count;
-    }
-    checkModel(result);
-    return result;
+    return mergeGeometry(chunks);
 }
 
 export function geometryFromScene(scene: THREE.Object3D): ChunkGeometry {
@@ -75,6 +60,9 @@ export function geometryFromScene(scene: THREE.Object3D): ChunkGeometry {
                         array[i * size] = attribute.getX(i);
                         array[i * size + 1] = attribute.getY(i);
                         if (size === 3) array[i * size + 2] = attribute.getZ(i);
+                        for (let component = 0; component < size; component++)
+                            if (!Number.isFinite(array[i * size + component]))
+                                throw new MeshQuiltError(`${name} attribute values must be finite`);
                     }
                     return array;
                 };
@@ -99,7 +87,18 @@ export function geometryFromScene(scene: THREE.Object3D): ChunkGeometry {
                 geometry.dispose();
             }
         });
-        return mergeChunks(parts);
+        // Import policy: retain attributes only when available on every mesh.
+        // The library itself is strict and never silently discards an attribute.
+        const hasNormal = parts.every((part) => part.normal !== undefined);
+        const hasUv = parts.every((part) => part.uv !== undefined);
+        return mergePreviewGeometry(
+            parts.map((part) => ({
+                position: part.position,
+                index: part.index,
+                normal: hasNormal ? part.normal : undefined,
+                uv: hasUv ? part.uv : undefined
+            }))
+        );
     } finally {
         scene.traverse((object) => {
             if (!(object instanceof THREE.Mesh)) return;

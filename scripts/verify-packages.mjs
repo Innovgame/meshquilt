@@ -43,11 +43,16 @@ try {
         `
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
-import { encodeGeometry, decodeGeometry, splitGeometry, quantizationOf, quantizeComponent } from "meshquilt";
+import { encodeGeometry, decodeGeometry, splitGeometry, mergeGeometry, quantizationOf, quantizeComponent } from "meshquilt";
 import { createDracoChunkEncoder, createDracoWorkerPool, encodeDracoInWorker } from "meshquilt/draco";
 const geometry = { position: new Float32Array([0,0,0,1,0,0,0,1,0]) };
 const chunks = splitGeometry(geometry, 1);
 assert.deepEqual(chunks[0].index, new Uint32Array([0,1,2]));
+const merged = mergeGeometry([chunks[0], geometry]);
+assert.deepEqual(merged.index, new Uint32Array([0,1,2,3,4,5]));
+assert.deepEqual(merged.position, new Float32Array([0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0]));
+merged.position[0] = 9;
+assert.equal(geometry.position[0], 0, "merge output must not alias input attributes");
 assert.deepEqual(quantizationOf(geometry).position, { origin: [0,0,0], range: 1 });
 assert.equal(quantizeComponent(0.5, 0, 1, 8), 128 / 255);
 const bytes = await encodeGeometry(geometry, { encodeChunk: () => new Uint8Array([7]) });
@@ -68,17 +73,20 @@ console.log("Packed meshquilt: root/draco/worker exports, triangle soup, no Thre
     await writeFile(
         join(consumer, "check.ts"),
         `
-import { encodeGeometry, decodeGeometry, quantizationOf, quantizeComponent } from "meshquilt";
-import type { GeometryInput, GeometryProgress, EncodeGeometryOptions, DecodeGeometryOptions, QuantBits } from "meshquilt";
+import { encodeGeometry, decodeGeometry, mergeGeometry, quantizationOf, quantizeComponent } from "meshquilt";
+import type { GeometryInput, GeometryBuffers, GeometryProgress, EncodeGeometryOptions, DecodeGeometryOptions, QuantBits } from "meshquilt";
 import type { DracoWorkerPoolOptions, DracoGeometryWorkerOptions } from "meshquilt/draco";
 const geometry: GeometryInput = { position: new Float32Array(9), index: new Uint16Array([0,1,2]) };
+const inputs: readonly GeometryInput[] = [geometry];
+const merged: GeometryBuffers = mergeGeometry(inputs);
+const mergedIndices: Uint32Array = merged.index;
 const quant: QuantBits = { positionBits: 14 };
 const progress = (event: GeometryProgress) => { void event.completedChunks; };
 const encode: EncodeGeometryOptions = { ...quant, encodeChunk: () => new Uint8Array([1]), onProgress: progress };
 const decode: DecodeGeometryOptions = { copyChunks: false, onProgress: progress };
 const worker: DracoWorkerPoolOptions = { workerUrl: "worker.js", encoderScriptUrl: "encoder.js" };
 const wholeWorker: DracoGeometryWorkerOptions = { ...worker, transferInput: true };
-void [geometry, encode, decode, worker, wholeWorker, encodeGeometry, decodeGeometry, quantizationOf, quantizeComponent];
+void [geometry, mergedIndices, encode, decode, worker, wholeWorker, encodeGeometry, decodeGeometry, quantizationOf, quantizeComponent];
 `
     );
     run(

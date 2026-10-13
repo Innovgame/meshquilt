@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { mergeChunks } from "../src/lib/mesh-model.js";
+import { mergeGeometry } from "meshquilt";
 import { createDisplayPieces } from "../src/lib/mesh-display.js";
 import type { ChunkGeometry } from "meshquilt";
 
@@ -20,7 +20,7 @@ const chunks: ChunkGeometry[] = [
 ];
 
 it("whole display preserves separate seam vertices, normals and UVs in one mesh", () => {
-    const merged = mergeChunks(chunks);
+    const merged = mergeGeometry(chunks);
     const pieces = createDisplayPieces({ geometry: merged, chunks }, "whole");
     try {
         expect(pieces).toHaveLength(1);
@@ -46,7 +46,7 @@ it("whole display preserves separate seam vertices, normals and UVs in one mesh"
 });
 
 it("chunk display preserves source attributes and gives chunks independent colors", () => {
-    const pieces = createDisplayPieces({ geometry: mergeChunks(chunks), chunks }, "chunks");
+    const pieces = createDisplayPieces({ geometry: mergeGeometry(chunks), chunks }, "chunks");
     try {
         expect(pieces).toHaveLength(2);
         expect(pieces[0]!.material.color.equals(pieces[1]!.material.color)).toBe(false);

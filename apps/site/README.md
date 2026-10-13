@@ -29,6 +29,8 @@ Parsing, splitting, and decoding run in a cancellable site Worker; encoding uses
 
 Use **Chunks / Whole mesh** to inspect either independently colored chunks or one merged Mesh with a uniform preview material. Whole mode sets separation to zero and disables its slider; returning to chunks starts at zero separation. Mode switches preserve the camera and remain available for imported MQLT and original/decoded comparison. Stored chunk statistics and encoding settings remain independent of the display mode. The whole Mesh uses the already merged geometry, preserves UVs and existing normals, and keeps duplicate seam vertices without welding. Missing normals are computed on the displayed geometry only; this does not reconstruct cross-chunk vertex sharing or guarantee smooth shading across every boundary. Textures are not displayed by the uniform preview material.
 
+Buffer concatenation uses the library's `mergeGeometry`; the site wrapper adds preview capacity limits only. The model importer explicitly drops a normal/UV attribute when any mesh lacks it, while library merges and decoded MQLT chunks require consistent attribute presence. Three.js construction, display normalization, materials, and the display-mode controls remain in the site.
+
 ## GitHub Pages
 
 1. Push this repository to GitHub with a `main` branch.

@@ -2,7 +2,7 @@ import { decodeContainer, decodeGeometry } from "meshquilt";
 import { decodeDracoChunk } from "meshquilt/draco";
 import type { DracoDecoderModule } from "meshquilt/draco";
 import { importModel } from "./mesh-import.js";
-import { demoModel, makeModel, mergeChunks, ModelError, modelErrorMessage } from "./mesh-model.js";
+import { demoModel, makeModel, mergePreviewGeometry, ModelError, modelErrorMessage } from "./mesh-model.js";
 import { MAX_CHUNKS, MAX_FILE_BYTES, MAX_TRIANGLES, MAX_VERTICES } from "./mesh-limits.js";
 import type { GeometryProgress } from "meshquilt";
 import type { MeshModel } from "./mesh-model.js";
@@ -48,7 +48,7 @@ scope.onmessage = async ({ data }) => {
             );
             model = {
                 name: data.name,
-                geometry: mergeChunks(decoded.chunks),
+                geometry: mergePreviewGeometry(decoded.chunks),
                 chunks: decoded.chunks,
                 header: decoded.header,
                 sourceBytes: bytes.byteLength,

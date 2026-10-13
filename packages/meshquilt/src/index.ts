@@ -11,6 +11,7 @@ export {
     computeVolume
 } from "./quantization/quant.js";
 export { iterateGeometry, splitGeometry } from "./geometry/split.js";
+export { mergeGeometry } from "./geometry/merge.js";
 export { validateGeometry } from "./geometry/validate.js";
 export type { EncodeGeometryOptions, DecodeGeometryOptions, MapPoolOptions } from "./pipeline.js";
 export type { DecodeContainerOptions } from "./container/container.js";

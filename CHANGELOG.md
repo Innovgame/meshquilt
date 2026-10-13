@@ -4,6 +4,7 @@ This file records changes that users can see. Versions follow repository tags, f
 
 ## Unreleased
 
+- Export dependency-free `mergeGeometry` to combine indexed or nonindexed geometry into independent Uint32-indexed buffers without welding or requantization. Reject mixed normal/UV presence; move the website's merging implementation into the library while keeping import policy and preview limits in the site.
 - Add Chunks / Whole mesh display modes to the website playground. Render one merged Mesh with a uniform material while retaining UVs, normals, duplicate seam vertices, stored chunk statistics, and export settings; no topology welding is performed.
 - Turn the website's Live geometry preview into a local STL/OBJ/GLB/MQLT playground with real chunk/precision controls, cancellable Worker encoding and decoding, MQLT downloads, and original/decoded comparison. Preserve model coordinates and imported chunk boundaries; bundle Draco assets locally for Pages subpaths.
 - Remove the duplicate demo application and consolidate Three.js guidance in the bilingual docs. Run library browser checks without a website server and reuse built artifacts in CI. Retain deprecated quantization helpers in an isolated compatibility module.

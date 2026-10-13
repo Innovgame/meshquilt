@@ -1,6 +1,6 @@
 # meshquilt
 
-The array-first entrypoint for geometry splitting, shared quantization and the MQLT container. Importing it does not load Draco, Three.js, or start Workers.
+The array-first entrypoint for geometry splitting/merging, shared quantization and the MQLT container. Importing it does not load Draco, Three.js, or start Workers.
 
 ## Install
 
@@ -62,6 +62,20 @@ const decoded = await decodeGeometry(bytes, myDecoder, 2, {
 ```
 
 Results are independent geometry chunks. No rendering objects or materials are created, and chunks are not welded into one allocation. By default compressed payloads are copied; opt-in zero-copy decoding returns views into the input container. Keep that container alive, unchanged and attached until all decoders finish.
+
+## Merge geometry
+
+```ts
+import { mergeGeometry } from "meshquilt";
+
+const geometry = mergeGeometry(decoded.chunks);
+```
+
+`mergeGeometry(inputs: readonly GeometryInput[]): GeometryBuffers` validates each input, concatenates attributes in input order, and offsets triangle indices by the preceding vertex counts. It accepts Uint16/Uint32 indices and triangle soup; the result always has a Uint32 index. Empty lists, invalid geometry, and a total vertex count outside the Uint32 index range are rejected.
+
+Normals and UVs must each be present on every input or absent from every input. Mixed presence throws `MeshQuiltError`; applications must explicitly remove an unwanted attribute or provide the missing data before merging. Values are copied exactly without welding, normal recomputation, or quantization. Coincident vertices with different normals/UVs stay separate, and original topology or vertex identifiers are not reconstructed.
+
+Every output array owns a new buffer, including single-input merges. The inputs remain unchanged. Merging is synchronous and requires memory for the complete output in addition to the input chunks; large browser applications can call it in their own Worker. It creates no rendering objects and imposes no website preview limit. `decodeGeometry` continues to return chunks; merging is an explicit optional step.
 
 ## Lazy splitting and scheduling
 

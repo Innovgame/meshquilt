@@ -1,6 +1,6 @@
 # meshquilt
 
-面向原始数组的几何入口，负责分块、共享量化与 MQLT 容器，不加载 Draco、Three.js 或 Worker。
+面向原始数组的几何入口，负责分块、合并、共享量化与 MQLT 容器，不加载 Draco、Three.js 或 Worker。
 
 ## 输入与规范化
 
@@ -39,6 +39,20 @@ const decoded = await decodeGeometry(bytes, myDecoder, 2, {
 ```
 
 解码返回独立几何块，不创建材质/绘制对象，不重新焊接。默认复制压缩载荷，copyChunks: false 返回源容器视图，解码完成前不能修改或转移源容器。
+
+## 合并几何
+
+```ts
+import { mergeGeometry } from "meshquilt";
+
+const geometry = mergeGeometry(decoded.chunks);
+```
+
+`mergeGeometry(inputs: readonly GeometryInput[]): GeometryBuffers` 校验每份输入，按输入顺序拼接属性，并按前面输入的顶点数调整三角形索引。支持 Uint16/Uint32 索引和无索引三角网格，输出始终使用 Uint32 索引。空列表、无效几何或超出 Uint32 索引范围的总顶点数会被拒绝。
+
+法线与 UV 各自必须在所有输入中都存在或都不存在；混合缺失会抛出 `MeshQuiltError`，由应用明确移除不需要的属性或补齐数据后再合并。属性值原样复制，不焊接、不重算法线、不再次量化；同位置但法线或 UV 不同的顶点保持独立，不恢复原始顶点编号或共享拓扑。
+
+所有输出数组使用新缓冲区，包括只有一份输入时，源数组不会被修改。合并是同步操作，除输入块外还需要完整输出的内存；大模型浏览器应用可在自己的 Worker 中调用。函数不创建绘制对象，也不包含官网预览容量限制。`decodeGeometry` 继续返回分块，合并由调用者主动选择。
 
 ## 调度、进度与所有权
 
