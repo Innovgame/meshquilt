@@ -33,9 +33,32 @@ Node 基准使用现有 Vitest 配置和 TypeScript bench 文件，Vitest 管理
 
 Vitest 结果位于 .tmp/performance/vitest/current。将 MESHQUILT_BENCH_DIST 指向旧版本编译目录后运行 pnpm bench，会生成 baseline；清除变量再运行，自动用 bench.from 比较。每阶段至少5次采样，浏览器每场景3次。正常 CI 不设置依赖硬件的耗时阈值。
 
-## 本机量化结果
+## 几何预处理与校验
 
-2026-10-13，i9-14900KF、32逻辑线程、约64GiB内存、Windows、Node26.5、Draco1.5.7、无界面 Chromium。基线为 cfec9e7，数据为固定生成的带法线/UV高度场，量化14/8/10位，每块10万面。
+编码入口通过内部 prepareGeometry 完成一次预处理：先检查结构和参数，再扫描一次索引与法线，位置/UV 的有限值检查合并到范围计算中。提供 positionVolume/uvVolume 时，只校验给定范围与输入有限值，不再计算随后被覆盖的 min/max。每个分块仍共用 float32 标准化的量化信息，默认14/8/10位；独立校验、分块和容器元数据校验继续保留，不按可变数组引用缓存校验结果。
+
+使用 `pnpm bench -t 'validation cost'` 运行现有 Vitest/TypeScript 基准，每阶段至少20次预热与20次采样，结果位于 .tmp/performance/validation。比较对象是当前公共范围计算＋校验两个独立步骤，与内部统一预处理；独立扫描组不是历史编译版本。
+
+2026-10-13，本机 Node26.5、约100万三角形、带法线/UV，中位数：
+
+| 场景                  | 独立扫描 | 统一预处理 | 降低 |
+| --------------------- | -------: | ---------: | ---: |
+| 索引模型 / 自动范围   | 11.58 ms |    7.51 ms |  35% |
+| 无索引模型 / 自动范围 | 48.72 ms |   34.14 ms |  30% |
+| 索引模型 / 给定范围   |  9.93 ms |    5.41 ms |  45% |
+| 无索引模型 / 给定范围 | 48.57 ms |   22.28 ms |  54% |
+
+这是预处理收益，不代表完整 Draco 编码同比提速。该组测量将进程及子进程固定在 CPU0，减少 i9-14900KF 混合核心调度差异；未固定时波动明显，甚至出现误导性的索引模型退化。可在临时 PowerShell 进程中复现：
+
+```powershell
+pwsh -NoProfile -Command '(Get-Process -Id $PID).ProcessorAffinity = [IntPtr]1; pnpm bench -t "validation cost"'
+```
+
+减少扫描不会让同步预处理主动让出主线程；优先界面响应仍推荐整体 Worker。
+
+## 编码与 Worker 测量
+
+2026-10-13，i9-14900KF、32逻辑线程、约64GiB内存、Windows、Node26.5、Draco1.5.7、无界面 Chromium。基线为 cfec9e7，优化版本为 d7417ff，早于上面的统一预处理改动。数据为固定生成的带法线/UV高度场，量化14/8/10位，每块10万面。
 
 | 场景          | Vitest编码中位数：优化前 / 后 | 降低 |
 | ------------- | ----------------------------- | ---- |

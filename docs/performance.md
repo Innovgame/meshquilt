@@ -54,9 +54,32 @@ Both versions run in the same Vitest harness with the same fixtures. Baseline re
 
 Browser fixtures route local Draco/Worker assets through Playwright and use an empty page, so benchmark traffic does not depend on a CDN or the website's rendering. Pooled/direct modes are warmed and report startup separately. Whole-pipeline modes include their per-call Worker startup. Fixture generation and transfer-mode input preparation are outside responsiveness observation. WASM capacity includes active encoder heaps, not total browser RSS; the 5ms heartbeat is an event-loop responsiveness signal, not a rendered-frame measurement.
 
-## Current measured results
+## Geometry preparation and validation
 
-Measured locally on 2026-10-13: Intel Core i9-14900KF, 32 logical CPUs, about 64 GiB RAM, Windows, Node 26.5.0, Draco 1.5.7 and headless Chromium. The baseline is commit `cfec9e7`; the optimized code is the uncommitted performance change. Generated heightfields have positions, smooth normals and UVs. They are reproducible proxies, not a substitute for the application's real models.
+The encoder uses one internal preparation boundary: shape and option checks happen first, index bounds and normals are scanned once, and position/UV finiteness is checked while calculating their shared bounds. Explicit `positionVolume`/`uvVolume` values skip bounds calculation but retain input finiteness checks. All chunks still receive the same float32-normalized quantization; defaults remain 14/8/10. Public `validateGeometry` and standalone splitting validate independently, and container metadata checks remain enabled. Validation is never cached by mutable array identity.
+
+Run `pnpm bench -t 'validation cost'` for the TypeScript/Vitest comparison. It measures separate public quantization plus validation against the internal preparation path, including supplied volumes, at least 20 measured iterations and 20 warmup iterations. Results go to `.tmp/performance/validation`. Fixture creation and correctness assertions are outside timing. The separate-scan comparison uses the current public validator; it is not a frozen historical binary.
+
+Local medians on 2026-10-13, Node 26.5.0, about one million triangles with normals and UVs:
+
+| Fixture / volumes          | Separate scans | Prepared | Reduction |
+| -------------------------- | -------------: | -------: | --------: |
+| Indexed / calculated       |       11.58 ms |  7.51 ms |       35% |
+| Triangle soup / calculated |       48.72 ms | 34.14 ms |       30% |
+| Indexed / supplied         |        9.93 ms |  5.41 ms |       45% |
+| Triangle soup / supplied   |       48.57 ms | 22.28 ms |       54% |
+
+These are preprocessing reductions, not complete Draco encoding reductions. This comparison pinned the benchmark process and child workers to CPU 0 on Windows to reduce scheduling differences on the i9-14900KF's mixed core types. Unpinned runs varied substantially and even showed a misleading indexed regression. For the same optional pinning in a temporary PowerShell process:
+
+```powershell
+pwsh -NoProfile -Command '(Get-Process -Id $PID).ProcessorAffinity = [IntPtr]1; pnpm bench -t "validation cost"'
+```
+
+Reducing scans does not make synchronous preparation yield to browser rendering. The whole-operation Worker remains the preferred path for responsiveness.
+
+## Encoding and Worker measurements
+
+Measured locally on 2026-10-13: Intel Core i9-14900KF, 32 logical CPUs, about 64 GiB RAM, Windows, Node 26.5.0, Draco 1.5.7 and headless Chromium. The baseline is commit `cfec9e7`; the optimized code is commit `d7417ff`, before the preparation consolidation described above. Generated heightfields have positions, smooth normals and UVs. They are reproducible proxies, not a substitute for the application's real models.
 
 Vitest median stage timings, with unchanged quantization and chunk budget:
 

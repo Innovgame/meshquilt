@@ -125,21 +125,14 @@
       throw new MeshQuiltError(`${name} must be an integer from 0 to ${MAX_QUANT_BITS}`);
     }
   }
-  function computeSharedQuantization(geometry, bits = {}) {
+  function resolveQuantBits(bits) {
     const positionBits = bits.positionBits ?? DEFAULT_POSITION_BITS;
     const normalBits = bits.normalBits ?? DEFAULT_NORMAL_BITS;
     const uvBits = bits.uvBits ?? DEFAULT_UV_BITS;
     assertBits("positionBits", positionBits);
     assertBits("normalBits", normalBits);
     assertBits("uvBits", uvBits);
-    const quant = {
-      positionBits,
-      normalBits,
-      uvBits,
-      position: computeVolume(geometry.position, 3)
-    };
-    if (geometry.uv) quant.uv = computeVolume(geometry.uv, 2);
-    return quant;
+    return { positionBits, normalBits, uvBits };
   }
 
   // src/container/container.ts
@@ -192,8 +185,8 @@
     view.setFloat32(offset + dims * 4, volume.range, true);
   }
 
-  // src/geometry/split.ts
-  function validateGeometry(geometry) {
+  // src/geometry/validate.ts
+  function validateGeometryShape(geometry) {
     if (geometry.position.length === 0 || geometry.position.length % 3 !== 0) {
       throw new MeshQuiltError("position must be a non-empty xyz float array");
     }
@@ -203,30 +196,31 @@
     const vertexCount = geometry.position.length / 3;
     if (!geometry.index && vertexCount % 3 !== 0)
       throw new MeshQuiltError("nonindexed positions must form complete triangles");
-    for (let i = 0; i < (geometry.index?.length ?? 0); i++) {
-      const vertex = geometry.index[i];
-      if (vertex < 0 || vertex >= vertexCount) {
-        throw new MeshQuiltError(`index ${vertex} is outside 0..${vertexCount - 1}`);
-      }
-    }
     if (geometry.normal && geometry.normal.length !== geometry.position.length) {
       throw new MeshQuiltError("normal length must match position length");
     }
     if (geometry.uv && geometry.uv.length !== vertexCount * 2) {
       throw new MeshQuiltError("uv length must be twice the vertex count");
     }
-    for (const [name, values] of Object.entries({
-      position: geometry.position,
-      normal: geometry.normal,
-      uv: geometry.uv
-    })) {
-      if (!values) continue;
-      for (let i = 0; i < values.length; i++) {
-        const value = values[i];
-        if (!Number.isFinite(value)) throw new MeshQuiltError(`${name} values must be finite`);
+  }
+  function validateIndices(geometry) {
+    const indices = geometry.index;
+    if (!indices) return;
+    const vertexCount = geometry.position.length / 3;
+    for (let i = 0; i < indices.length; i++) {
+      const vertex = indices[i];
+      if (vertex < 0 || vertex >= vertexCount) {
+        throw new MeshQuiltError(`index ${vertex} is outside 0..${vertexCount - 1}`);
       }
     }
   }
+  function validateFiniteAttribute(name, values) {
+    for (let i = 0; i < values.length; i++) {
+      if (!Number.isFinite(values[i])) throw new MeshQuiltError(`${name} values must be finite`);
+    }
+  }
+
+  // src/geometry/split.ts
   function* iterateValidatedGeometry(geometry, maxTriangles) {
     const indexCount = geometry.index?.length ?? geometry.position.length / 3;
     const triangleCount = indexCount / 3;
@@ -317,17 +311,35 @@
     return geometry.index instanceof Uint32Array;
   }
 
+  // src/geometry/prepare.ts
+  function prepareGeometry(geometry, options = {}) {
+    validateGeometryShape(geometry);
+    const bits = resolveQuantBits(options);
+    const position = options.positionVolume ? normalizeVolume(options.positionVolume, 3) : void 0;
+    const uv = options.uvVolume ? normalizeVolume(options.uvVolume, 2) : void 0;
+    validateIndices(geometry);
+    if (geometry.normal) validateFiniteAttribute("normal", geometry.normal);
+    if (position) validateFiniteAttribute("position", geometry.position);
+    if (geometry.uv && uv) validateFiniteAttribute("uv", geometry.uv);
+    const quant = {
+      ...bits,
+      position: position ?? computeVolume(geometry.position, 3)
+    };
+    if (uv) quant.uv = uv;
+    else if (geometry.uv) quant.uv = computeVolume(geometry.uv, 2);
+    return quant;
+  }
+
   // src/pipeline.ts
   async function encodeGeometry(geometry, options) {
     if (options.signal?.aborted) throw new MeshQuiltError("operation aborted");
-    const quant = computeSharedQuantization(geometry, options);
-    if (options.positionVolume) quant.position = normalizeVolume(options.positionVolume, 3);
-    if (options.uvVolume) quant.uv = normalizeVolume(options.uvVolume, 2);
-    if (geometry.uv && !quant.uv) throw new MeshQuiltError("uv quantization volume is missing");
-    validateGeometry(geometry);
     const maxTriangles = options.maxTriangles ?? DEFAULT_MAX_TRIANGLES;
     if (!Number.isInteger(maxTriangles) || maxTriangles < 1)
       throw new MeshQuiltError("maxTriangles must be an integer >= 1");
+    const concurrency = options.concurrency ?? 1;
+    if (!Number.isInteger(concurrency) || concurrency < 1)
+      throw new MeshQuiltError("concurrency must be an integer >= 1");
+    const quant = prepareGeometry(geometry, options);
     const totalChunks = Math.ceil((geometry.index?.length ?? geometry.position.length / 3) / 3 / maxTriangles);
     let completedChunks = 0;
     const report = () => options.onProgress?.({ stage: "encode", completedChunks, totalChunks });
@@ -335,7 +347,7 @@
     const pieces = iterateValidatedGeometry(geometry, maxTriangles);
     const encoded = await mapPool(
       pieces,
-      options.concurrency ?? 1,
+      concurrency,
       async (chunk, index) => {
         const bytes = await options.encodeChunk(chunk, quant, index);
         completedChunks++;

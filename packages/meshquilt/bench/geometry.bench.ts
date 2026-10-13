@@ -48,6 +48,9 @@ describe.each(cases)("$name / 14-8-10 bits / 100k triangles per chunk", ({ name,
         const triangles = (input.index?.length ?? input.position.length / 3) / 3;
         const options = { maxTriangles: 100_000, encodeChunk: encoder };
         const payload = await encode(input, options);
+        // Differential correctness belongs outside timing: both versions use
+        // the same codec instance, fixture and options, so output must match.
+        if (baselineDir) expect(await encodeGeometry(input, options)).toEqual(payload);
         const read = (bytes: Uint8Array) => decodeChunk(decoder, bytes);
         const decoded = await decode(payload, read);
         expect(decoded.chunks.reduce((sum, chunk) => sum + chunk.index.length / 3, 0)).toBe(triangles);

@@ -4,6 +4,7 @@ This file records changes that users can see. Versions follow repository tags, f
 
 ## Unreleased
 
+- Combine geometry validation with shared-volume preparation, scan attributes once, and skip unused bounds for explicit volumes. Keep standalone validation and remove the extra full validation in the Three.js encoding example.
 - Add standard Vitest/TypeScript geometry benchmarks and Playwright Worker/responsiveness measurements sharing fixtures; remove the standalone Worker integration runner.
 - Speed up nonindexed splitting, indexed vertex remapping and attribute copies; avoid duplicate full validation and use optional Draco bulk decode APIs with portable fallback.
 - Add whole-pipeline `encodeDracoInWorker` with explicit input ownership transfer, typed progress and cancellation for large browser workloads.

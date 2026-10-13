@@ -26,6 +26,13 @@ export interface EncodeMeshOptions extends EncodeGeometryOptions {
 }
 
 export function meshToGeometry(mesh: Mesh): GeometryBuffers {
+    const geometry = readMeshGeometry(mesh);
+    validateGeometry(geometry);
+    return geometry;
+}
+
+/** Conversion only: callers own the validation boundary. */
+function readMeshGeometry(mesh: Mesh): GeometryBuffers {
     assertSupportedMesh(mesh);
     const positionAttr = mesh.geometry.getAttribute("position");
     if (!positionAttr) throw new MeshQuiltError("mesh has no position attribute");
@@ -45,7 +52,6 @@ export function meshToGeometry(mesh: Mesh): GeometryBuffers {
         if (uvAttr.itemSize !== 2) throw new MeshQuiltError("uv itemSize must be 2");
         geometry.uv = readFloatAttribute(uvAttr, 2);
     }
-    validateGeometry(geometry);
     return geometry;
 }
 
@@ -74,7 +80,7 @@ export function chunksToGroup(chunks: ChunkGeometry[], source: Mesh): Group {
 }
 
 export function encodeMesh(mesh: Mesh, options: EncodeMeshOptions): Promise<Uint8Array> {
-    return encodeGeometry(meshToGeometry(mesh), options);
+    return encodeGeometry(readMeshGeometry(mesh), options);
 }
 
 export async function decodeMesh(

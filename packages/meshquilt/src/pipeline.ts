@@ -1,11 +1,7 @@
 import { encodeContainer, decodeContainer, type DecodeContainerOptions } from "./container/container.js";
-import {
-    computeSharedQuantization,
-    normalizeVolume,
-    DEFAULT_MAX_TRIANGLES,
-    type QuantBits
-} from "./quantization/quant.js";
-import { iterateValidatedGeometry, validateGeometry } from "./geometry/split.js";
+import { computeSharedQuantization, DEFAULT_MAX_TRIANGLES, type QuantBits } from "./quantization/quant.js";
+import { iterateValidatedGeometry } from "./geometry/split.js";
+import { prepareGeometry } from "./geometry/prepare.js";
 import {
     MeshQuiltError,
     type ChunkDecoder,
@@ -32,15 +28,13 @@ export interface EncodeGeometryOptions extends QuantBits {
 
 export async function encodeGeometry(geometry: GeometryInput, options: EncodeGeometryOptions): Promise<Uint8Array> {
     if (options.signal?.aborted) throw new MeshQuiltError("operation aborted");
-    const quant = computeSharedQuantization(geometry, options);
-    if (options.positionVolume) quant.position = normalizeVolume(options.positionVolume, 3);
-    if (options.uvVolume) quant.uv = normalizeVolume(options.uvVolume, 2);
-    if (geometry.uv && !quant.uv) throw new MeshQuiltError("uv quantization volume is missing");
-
-    validateGeometry(geometry);
     const maxTriangles = options.maxTriangles ?? DEFAULT_MAX_TRIANGLES;
     if (!Number.isInteger(maxTriangles) || maxTriangles < 1)
         throw new MeshQuiltError("maxTriangles must be an integer >= 1");
+    const concurrency = options.concurrency ?? 1;
+    if (!Number.isInteger(concurrency) || concurrency < 1)
+        throw new MeshQuiltError("concurrency must be an integer >= 1");
+    const quant = prepareGeometry(geometry, options);
     const totalChunks = Math.ceil((geometry.index?.length ?? geometry.position.length / 3) / 3 / maxTriangles);
     let completedChunks = 0;
     const report = () => options.onProgress?.({ stage: "encode", completedChunks, totalChunks });
@@ -49,7 +43,7 @@ export async function encodeGeometry(geometry: GeometryInput, options: EncodeGeo
     const pieces = iterateValidatedGeometry(geometry, maxTriangles);
     const encoded = await mapPool(
         pieces,
-        options.concurrency ?? 1,
+        concurrency,
         async (chunk, index) => {
             const bytes = await options.encodeChunk(chunk, quant, index);
             completedChunks++;

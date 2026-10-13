@@ -10,7 +10,8 @@ export {
     computeVolume,
     quantizeComponent
 } from "./quantization/quant.js";
-export { iterateGeometry, splitGeometry, validateGeometry } from "./geometry/split.js";
+export { iterateGeometry, splitGeometry } from "./geometry/split.js";
+export { validateGeometry } from "./geometry/validate.js";
 export type { EncodeGeometryOptions, DecodeGeometryOptions, MapPoolOptions } from "./pipeline.js";
 export type { DecodeContainerOptions } from "./container/container.js";
 export type { QuantBits } from "./quantization/quant.js";

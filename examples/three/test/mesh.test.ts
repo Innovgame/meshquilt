@@ -13,6 +13,16 @@ import { splitGeometry } from "meshquilt";
 import { chunksToGroup, meshToGeometry, encodeMesh } from "../integration";
 
 describe("meshToGeometry", () => {
+    it("rejects invalid numeric attributes in both standalone conversion and encoding", async () => {
+        const geometry = new BoxGeometry();
+        geometry.getAttribute("position").setX(0, NaN);
+        const mesh = new Mesh(geometry, new MeshBasicMaterial());
+        expect(() => meshToGeometry(mesh)).toThrow(/finite/);
+        // The encoder boundary owns numeric validation, so encoding failures reject
+        // the returned Promise just like encodeGeometry does.
+        await expect(encodeMesh(mesh, { encodeChunk: () => new Uint8Array([1]) })).rejects.toThrow(/finite/);
+    });
+
     it.each([LegacyThree, { InterleavedBuffer, InterleavedBufferAttribute, BufferGeometry, Mesh, MeshBasicMaterial }])(
         "reads interleaved positions across supported Three versions",
         (three) => {

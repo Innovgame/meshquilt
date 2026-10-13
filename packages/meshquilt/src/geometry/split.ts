@@ -1,39 +1,5 @@
 import { MeshQuiltError, type ChunkGeometry, type GeometryInput } from "../types.js";
-
-export function validateGeometry(geometry: GeometryInput): void {
-    if (geometry.position.length === 0 || geometry.position.length % 3 !== 0) {
-        throw new MeshQuiltError("position must be a non-empty xyz float array");
-    }
-    if (geometry.index && (geometry.index.length === 0 || geometry.index.length % 3 !== 0)) {
-        throw new MeshQuiltError("index must be a non-empty triangle list");
-    }
-    const vertexCount = geometry.position.length / 3;
-    if (!geometry.index && vertexCount % 3 !== 0)
-        throw new MeshQuiltError("nonindexed positions must form complete triangles");
-    for (let i = 0; i < (geometry.index?.length ?? 0); i++) {
-        const vertex = geometry.index![i]!;
-        if (vertex < 0 || vertex >= vertexCount) {
-            throw new MeshQuiltError(`index ${vertex} is outside 0..${vertexCount - 1}`);
-        }
-    }
-    if (geometry.normal && geometry.normal.length !== geometry.position.length) {
-        throw new MeshQuiltError("normal length must match position length");
-    }
-    if (geometry.uv && geometry.uv.length !== vertexCount * 2) {
-        throw new MeshQuiltError("uv length must be twice the vertex count");
-    }
-    for (const [name, values] of Object.entries({
-        position: geometry.position,
-        normal: geometry.normal,
-        uv: geometry.uv
-    })) {
-        if (!values) continue;
-        for (let i = 0; i < values.length; i++) {
-            const value = values[i]!;
-            if (!Number.isFinite(value)) throw new MeshQuiltError(`${name} values must be finite`);
-        }
-    }
-}
+import { validateGeometry } from "./validate.js";
 
 /**
  * Split indexed or nonindexed triangle geometry into chunks of at most `maxTriangles`.

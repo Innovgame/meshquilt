@@ -81,18 +81,20 @@ export function assertBits(name: string, bits: number): void {
     }
 }
 
-export function computeSharedQuantization(geometry: GeometryInput, bits: QuantBits = {}): SharedQuantization {
+/** Internal defaults and parameter checks, shared with encoder preparation. */
+export function resolveQuantBits(bits: QuantBits): Required<QuantBits> {
     const positionBits = bits.positionBits ?? DEFAULT_POSITION_BITS;
     const normalBits = bits.normalBits ?? DEFAULT_NORMAL_BITS;
     const uvBits = bits.uvBits ?? DEFAULT_UV_BITS;
     assertBits("positionBits", positionBits);
     assertBits("normalBits", normalBits);
     assertBits("uvBits", uvBits);
+    return { positionBits, normalBits, uvBits };
+}
 
+export function computeSharedQuantization(geometry: GeometryInput, bits: QuantBits = {}): SharedQuantization {
     const quant: SharedQuantization = {
-        positionBits,
-        normalBits,
-        uvBits,
+        ...resolveQuantBits(bits),
         position: computeVolume(geometry.position, 3)
     };
     if (geometry.uv) quant.uv = computeVolume(geometry.uv, 2);

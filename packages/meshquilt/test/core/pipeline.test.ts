@@ -42,6 +42,37 @@ function identityDecode(bytes: Uint8Array): ChunkGeometry {
 }
 
 describe("encodeGeometry", () => {
+    it.each(["neither", "position", "uv", "both"])(
+        "shares the exact quantization metadata with every chunk when overriding %s volumes",
+        async (overrides) => {
+            const usePosition = overrides === "position" || overrides === "both";
+            const useUv = overrides === "uv" || overrides === "both";
+            const seen: SharedQuantization[] = [];
+            const bytes = await encodeGeometry(geometry, {
+                maxTriangles: 1,
+                positionBits: 11,
+                normalBits: 7,
+                uvBits: 9,
+                ...(usePosition ? { positionVolume: { origin: [-1, -2, -3], range: 8 } } : {}),
+                ...(useUv ? { uvVolume: { origin: [-4, -5], range: 16 } } : {}),
+                encodeChunk(chunk, quant) {
+                    seen.push(quant);
+                    return identityEncode(chunk);
+                }
+            });
+            const expected = {
+                positionBits: 11,
+                normalBits: 7,
+                uvBits: 9,
+                position: usePosition ? { origin: [-1, -2, -3], range: 8 } : { origin: [0, 0, 0], range: 1 },
+                uv: useUv ? { origin: [-4, -5], range: 16 } : { origin: [0, 0], range: 1 }
+            };
+            expect(seen).toEqual([expected, expected]);
+            expect(seen[0]).toBe(seen[1]);
+            expect(decodeContainer(bytes).header.quantization).toEqual(expected);
+        }
+    );
+
     it("gives every chunk the same position and uv volume", async () => {
         const seen: SharedQuantization[] = [];
         const buffer = await encodeGeometry(geometry, {
