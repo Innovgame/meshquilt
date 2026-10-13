@@ -49,4 +49,4 @@ The workflow uses Node.js 24, whose supported npm version must support trusted p
 
 ## Compatibility and distribution
 
-This is an ESM package. The root import has no runtime dependencies or import-time Worker initialization. It accepts Uint16/Uint32 indices and triangle soup, while codec chunks use Uint32 indices. Three.js remains a private integration example. Keep the MQLT version and format explicit when changing data compatibility; publishing a new package name does not migrate old Tango containers automatically.
+This is an ESM package. The root import has no runtime dependencies or import-time Worker initialization. It accepts Uint16/Uint32 indices and triangle soup, while codec chunks use Uint32 indices. Three.js remains a private integration example. Keep the MQLT version and format explicit when changing data compatibility.
