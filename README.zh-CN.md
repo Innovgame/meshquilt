@@ -17,7 +17,7 @@
   <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/Innovgame/meshquilt?color=FF2B6E"></a>
 </p>
 
-<a href="https://innovgame.github.io/meshquilt/"><img alt="MeshQuilt 官网的实时几何预览" src="docs/images/live-geometry.png"></a>
+<a href="https://innovgame.github.io/meshquilt/"><img alt="MeshQuilt 三维分块渲染场景" src="docs/images/live-geometry.png"></a>
 
 ```bash
 npm install meshquilt
