@@ -159,8 +159,8 @@ export function Home({ section }: { section?: string }) {
                     <MeshPreview />
                     <p className="visual-note">
                         {t(
-                            "Actual MeshQuilt splitting. Geometry preview, not a compression benchmark.",
-                            "使用 MeshQuilt 真实分块，仅为几何预览，不是压缩性能基准。"
+                            "Import, split, encode and reopen your mesh. Shared quantization across every chunk.",
+                            "导入、分块、编码并重新打开模型，所有几何块共享量化网格。"
                         )}
                     </p>
                 </div>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { splitGeometry } from "meshquilt";
+import type { ChunkGeometry } from "meshquilt";
 import { useSite } from "@/lib/site-context";
 
 const colors = ["#8daedb", "#b3c9e6", "#ecaa88", "#6fae9c", "#5079b1", "#e5c5a9", "#93b8af", "#7a9bcc"];
@@ -9,15 +9,22 @@ const colors = ["#8daedb", "#b3c9e6", "#ecaa88", "#6fae9c", "#5079b1", "#e5c5a9"
 export default function MeshCanvas({
     explode,
     wireframe,
-    rotate
+    rotate,
+    chunks,
+    fitVersion
 }: {
     explode: number;
     wireframe: boolean;
     rotate: boolean;
+    chunks: ChunkGeometry[];
+    fitVersion: number;
 }) {
     const { t } = useSite();
     const host = useRef<HTMLDivElement>(null);
-    const sceneRef = useRef<{ update: (explode: number, wireframe: boolean, rotate: boolean) => void } | null>(null);
+    const sceneRef = useRef<{
+        update: (explode: number, wireframe: boolean, rotate: boolean) => void;
+        fit: () => void;
+    } | null>(null);
     const values = useRef({ explode, wireframe, rotate });
     const [unavailable, setUnavailable] = useState(false);
     values.current = { explode, wireframe, rotate };
@@ -25,6 +32,7 @@ export default function MeshCanvas({
     useEffect(() => {
         const element = host.current;
         if (!element) return;
+        setUnavailable(false);
         let renderer: THREE.WebGLRenderer;
         try {
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -36,13 +44,15 @@ export default function MeshCanvas({
         renderer.setClearColor(0x000000, 0);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         element.appendChild(renderer.domElement);
-        renderer.domElement.setAttribute("aria-label", "Interactive split torus knot / 可交互的分块环面纽结");
+        renderer.domElement.setAttribute("aria-label", "Interactive chunked model / 可交互的分块模型");
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(33, 1, 0.1, 100);
         camera.position.set(0, 0.6, 9.5);
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enablePan = false;
-        controls.enableZoom = false;
+        controls.enableZoom = true;
+        controls.minDistance = 2;
+        controls.maxDistance = 30;
         controls.enableDamping = false;
         const group = new THREE.Group();
         group.rotation.set(0.25, -0.4, 0.1);
@@ -55,21 +65,24 @@ export default function MeshCanvas({
         fill.position.set(4, -1, -2);
         scene.add(fill);
 
-        const source = new THREE.TorusKnotGeometry(1.15, 0.37, 180, 20, 2, 3);
-        const chunks = splitGeometry(
-            {
-                position: new Float32Array(source.attributes.position!.array),
-                normal: new Float32Array(source.attributes.normal!.array),
-                uv: new Float32Array(source.attributes.uv!.array),
-                index: new Uint32Array(source.index!.array)
-            },
-            450
-        );
+        const bounds = new THREE.Box3();
+        for (const chunk of chunks) {
+            const attribute = new THREE.BufferAttribute(chunk.position, 3);
+            bounds.union(new THREE.Box3().setFromBufferAttribute(attribute));
+        }
+        const center = bounds.getCenter(new THREE.Vector3());
+        const size = bounds.getSize(new THREE.Vector3());
+        const scale = 3.1 / (Math.max(size.x, size.y, size.z) || 1);
         const pieces = chunks.map((chunk, index) => {
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute("position", new THREE.BufferAttribute(chunk.position, 3));
-            geometry.setAttribute("normal", new THREE.BufferAttribute(chunk.normal!, 3));
+            if (chunk.normal) geometry.setAttribute("normal", new THREE.BufferAttribute(chunk.normal.slice(), 3));
             geometry.setIndex(new THREE.BufferAttribute(chunk.index, 1));
+            // Normalize only the GPU copy: export coordinates remain untouched.
+            geometry.setAttribute("position", new THREE.BufferAttribute(chunk.position.slice(), 3));
+            geometry.translate(-center.x, -center.y, -center.z);
+            geometry.scale(scale, scale, scale);
+            if (!chunk.normal) geometry.computeVertexNormals();
             geometry.computeBoundingBox();
             const direction = geometry.boundingBox!.getCenter(new THREE.Vector3()).normalize();
             const material = new THREE.MeshStandardMaterial({
@@ -82,7 +95,6 @@ export default function MeshCanvas({
             group.add(mesh);
             return { mesh, direction, material };
         });
-        source.dispose();
         let autoRotate = false;
         let visible = true;
         let frame = 0;
@@ -107,6 +119,13 @@ export default function MeshCanvas({
             draw();
         };
         sceneRef.current = {
+            fit() {
+                camera.position.set(0, 0.6, 9.5);
+                controls.target.set(0, 0, 0);
+                group.rotation.set(0.25, -0.4, 0.1);
+                controls.update();
+                refresh();
+            },
             update(amount, wire, rotation) {
                 for (const { mesh, direction, material } of pieces) {
                     mesh.position.copy(direction).multiplyScalar((amount / 100) * 0.9);
@@ -158,9 +177,10 @@ export default function MeshCanvas({
             renderer.dispose();
             renderer.domElement.remove();
         };
-    }, []);
+    }, [chunks]);
 
     useEffect(() => sceneRef.current?.update(explode, wireframe, rotate), [explode, wireframe, rotate]);
+    useEffect(() => sceneRef.current?.fit(), [fitVersion]);
 
     return (
         <div className="mesh-canvas" ref={host}>

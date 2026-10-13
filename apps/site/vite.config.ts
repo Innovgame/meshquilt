@@ -1,7 +1,55 @@
 import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { build } from "esbuild";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, loadEnv } from "vite";
+import type { Plugin } from "vite";
+
+function codecAssets(): Plugin {
+    const assets = new Map<string, Uint8Array>();
+    return {
+        name: "meshquilt-local-codec",
+        async buildStart() {
+            const folder = dirname(createRequire(import.meta.url).resolve("draco3d"));
+            const worker = await build({
+                entryPoints: [
+                    fileURLToPath(new URL("../../packages/meshquilt/src/runtime/worker.ts", import.meta.url))
+                ],
+                bundle: true,
+                write: false,
+                platform: "browser",
+                format: "iife",
+                target: "es2022"
+            });
+            assets.set("encode.worker.js", worker.outputFiles[0]!.contents);
+            assets.set("draco_encoder.js", await readFile(join(folder, "draco_encoder_nodejs.js")));
+            const decoder = await readFile(join(folder, "draco_decoder_nodejs.js"), "utf8");
+            assets.set(
+                "draco_decoder.js",
+                new TextEncoder().encode(`${decoder}\nexport default DracoDecoderModule;\n`)
+            );
+            for (const name of ["draco_encoder.wasm", "draco_decoder.wasm"])
+                assets.set(name, await readFile(join(folder, name)));
+        },
+        configureServer(server) {
+            server.middlewares.use((request, response, next) => {
+                const path = new URL(request.url ?? "/", "http://localhost").pathname;
+                const name = path.split("/assets/codec/")[1];
+                const source = name && assets.get(name);
+                if (!source) return next();
+                response.setHeader("Content-Type", name.endsWith(".wasm") ? "application/wasm" : "text/javascript");
+                response.end(source);
+            });
+        },
+        generateBundle() {
+            for (const [name, source] of assets)
+                this.emitFile({ type: "asset", fileName: `assets/codec/${name}`, source });
+        }
+    };
+}
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), "");
@@ -15,6 +63,7 @@ export default defineConfig(({ mode }) => {
         plugins: [
             react(),
             tailwindcss(),
+            codecAssets(),
             {
                 name: "meshquilt-site-metadata",
                 transformIndexHtml(html) {
@@ -36,10 +85,19 @@ export default defineConfig(({ mode }) => {
             }
         ],
         resolve: {
-            alias: {
-                "@": fileURLToPath(new URL("./src", import.meta.url)),
-                meshquilt: fileURLToPath(new URL("../../packages/meshquilt/src/index.ts", import.meta.url))
-            }
+            alias: [
+                { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
+                {
+                    find: "meshquilt/draco",
+                    replacement: fileURLToPath(
+                        new URL("../../packages/meshquilt/src/codecs/draco/index.ts", import.meta.url)
+                    )
+                },
+                {
+                    find: "meshquilt",
+                    replacement: fileURLToPath(new URL("../../packages/meshquilt/src/index.ts", import.meta.url))
+                }
+            ]
         },
         define: { __REPOSITORY_URL__: JSON.stringify(repoUrl) },
         build: {

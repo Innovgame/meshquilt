@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- 将网站实时几何预览扩展为本地 STL/OBJ/GLB/MQLT 体验区，支持真实分块与精度设置、可取消的 Worker 编解码、MQLT 下载及原始/解码模型对比。保留模型坐标与导入文件的分块边界，Draco 资源随网站部署并兼容 Pages 子路径。
 - 移除重复 demo 应用，Three.js 完整说明统一到中英文文档。库浏览器测试无需网站服务器，CI 复用已构建产物。旧量化辅助 API 移入兼容模块并标记弃用，保持现有调用可用。
 - 新增标准 TypeScript Vitest 性能基准与 Playwright Worker/响应性测量，共享夹具并移除独立 Worker 集成脚本。
 - 优化无索引分块、索引映射、属性复制和重复校验，Draco 解码采用可选批量 API 与兼容回退。
