@@ -1,6 +1,7 @@
 import { createDracoChunkEncoder } from "../codecs/draco/encode-chunk.js";
 import type { DracoEncoderModule } from "../codecs/draco/types.js";
 import type { WorkerRequest, WorkerResponse } from "./protocol.js";
+import { encodeGeometry } from "../pipeline.js";
 
 interface EncoderWorkerScope {
     location: { href: string };
@@ -33,10 +34,19 @@ scope.onmessage = async ({ data }) => {
         }
         return;
     }
-    if (data.type !== "encode") return;
+    if (data.type !== "encode" && data.type !== "encodeGeometry") return;
     try {
         if (!encodeChunk) throw new Error("worker is not initialized");
-        const bytes = encodeChunk(data.chunk, data.quant);
+        const bytes =
+            data.type === "encode"
+                ? encodeChunk(data.chunk, data.quant)
+                : await encodeGeometry(data.geometry, {
+                      ...data.options,
+                      encodeChunk,
+                      onProgress(progress) {
+                          scope.postMessage({ type: "progress", id: data.id, progress });
+                      }
+                  });
         scope.postMessage({ id: data.id, buffer: bytes.buffer as ArrayBuffer }, [bytes.buffer]);
     } catch (error) {
         scope.postMessage({ id: data.id, error: error instanceof Error ? error.message : String(error) });

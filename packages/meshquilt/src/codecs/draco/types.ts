@@ -60,6 +60,14 @@ export interface DracoStatus {
 }
 
 export interface DracoDecoder {
+    GetTrianglesUInt32Array?(mesh: DracoMesh, byteLength: number, pointer: number): boolean | void;
+    GetAttributeDataArrayForAllPoints?(
+        mesh: DracoMesh,
+        attribute: DracoAttribute,
+        type: number,
+        byteLength: number,
+        pointer: number
+    ): boolean | void;
     GetEncodedGeometryType(buffer: unknown): number;
     DecodeBufferToMesh(buffer: unknown, mesh: DracoMesh): DracoStatus;
     GetAttributeId(mesh: DracoMesh, attributeType: number): number;
@@ -73,6 +81,11 @@ export interface DracoDecoderBuffer {
 }
 
 export interface DracoDecoderModule {
+    /** Optional bulk API; older injected modules use the portable GetValue path. */
+    _malloc?(byteLength: number): number;
+    _free?(pointer: number): void;
+    HEAPU8?: Uint8Array;
+    DT_FLOAT32?: number;
     TRIANGULAR_MESH: number;
     POSITION: number;
     NORMAL: number;

@@ -73,6 +73,8 @@ Serve meshquilt/worker as a classic Worker and provide its served URL. Relative 
 
 ## Failure, progress and memory
 
+For million-plus triangle browser workloads, `encodeDracoInWorker` from `meshquilt/draco` moves the complete encode pipeline off the main thread. It uses one dedicated Worker per operation. Default cloning preserves input ownership; explicit transferInput: true detaches input ArrayBuffers after startup and reduces copy memory. Those inputs cannot be reused or recovered after cancellation. Set timeoutMs for the whole operation, not per chunk. The chunk pool remains useful for multicore throughput.
+
 onProgress reports encode/decode stage, completedChunks and totalChunks, initially at0 and after every successful chunk. Progress is independent of AbortSignal cancellation; observer errors reject the operation. mapPool stops scheduling on failure and waits for active calls. A pool abort/dispose/runtime failure/timeout terminates all jobs. Default startup/per-job timeout is30 seconds, excluding queue time.
 
 Encoding creates chunks lazily, but source attributes, compressed results and final output still require model-sized memory. Splitting/validation run on the calling thread; this is not a streaming output API. Decoding copies compressed payloads by default. With copyChunks:false, keep the input alive and unchanged until decoding finishes.

@@ -4,6 +4,8 @@ MeshQuilt bounds the geometry passed to each encoder. This does not make the com
 
 ## Encoding working set
 
+`encodeDracoInWorker` from `meshquilt/draco` runs this work inside one dedicated Worker. It clones inputs by default, or transfers their ArrayBuffers with explicit transferInput: true. Transferred views become detached and are not returned after failure/cancellation. See [performance](performance.md) for the measured trade-offs. The normal encodeGeometry/chunk-pool path continues to preprocess on the caller thread.
+
 The core accepts geometry arrays directly, measures shared quantization and validates the geometry before splitting. `encodeGeometry` pulls chunks from a lazy iterator only when an encoder slot is available. Apart from splitter scratch space, no more than `concurrency` uncompressed chunks need to be in flight. Uint16/Uint32 indices are accepted; for nonindexed triangle soup, indices are created within each chunk. Copying Three.js input attributes belongs only to the integration example.
 
 The source arrays, each Worker WASM heap, accumulated compressed chunk bytes and the final MQLT buffer still require memory. Packing temporarily holds compressed payloads and the final output together. The API has no streaming output sink, and validation/conversion/splitting run on the calling thread. Do not describe this as a fixed total-memory or fully off-thread codec.

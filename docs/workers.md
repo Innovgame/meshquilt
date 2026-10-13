@@ -8,6 +8,8 @@ Provide workerUrl and encoderScriptUrl. Relative encoder URLs resolve from the W
 
 ## Scheduling and ownership
 
+For very large models, `encodeDracoInWorker` runs the complete preprocessing/encoding pipeline in one dedicated Worker. It uses the same asset and quantization logic. Explicit `transferInput: true` gives up input-buffer ownership and avoids a full model copy. This favors main-thread responsiveness and fewer WASM heaps over multicore throughput; see [performance](performance.md).
+
 Use a pool of 2–4 Workers, with encodeGeometry concurrency matching the pool size. The core generates uncompressed chunks lazily. The pool copies a chunk only when a Worker is available and transfers those copies; your input arrays remain attached.
 
 ## Failure and cancellation

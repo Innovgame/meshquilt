@@ -41,18 +41,55 @@ function readAttribute(
     const attributeId = decoder.GetAttributeId(mesh, attributeType);
     if (attributeId === -1) throw new MeshQuiltError(`Draco mesh has no ${name}`);
     const attribute = decoder.GetAttribute(mesh, attributeId);
+    const length = mesh.num_points() * components;
+    if (
+        module._malloc &&
+        module._free &&
+        module.HEAPU8 &&
+        module.DT_FLOAT32 !== undefined &&
+        decoder.GetAttributeDataArrayForAllPoints
+    ) {
+        const byteLength = length * Float32Array.BYTES_PER_ELEMENT;
+        const pointer = module._malloc(byteLength);
+        if (!pointer && byteLength > 0) throw new MeshQuiltError("Draco attribute allocation failed");
+        try {
+            if (
+                decoder.GetAttributeDataArrayForAllPoints(mesh, attribute, module.DT_FLOAT32, byteLength, pointer) ===
+                false
+            ) {
+                throw new MeshQuiltError(`Draco failed to read ${name}`);
+            }
+            // Read the refreshed heap after a call that can grow WASM memory, then copy out.
+            return new Float32Array(module.HEAPU8.buffer, pointer, length).slice();
+        } finally {
+            module._free(pointer);
+        }
+    }
     const values = new module.DracoFloat32Array();
     try {
         if (!decoder.GetAttributeFloatForAllPoints(mesh, attribute, values)) {
             throw new MeshQuiltError(`Draco failed to read ${name}`);
         }
-        return copyFloats(values, mesh.num_points() * components);
+        return copyFloats(values, length);
     } finally {
         module.destroy(values);
     }
 }
 
 function readFaces(module: DracoDecoderModule, decoder: DracoDecoder, mesh: DracoMesh): Uint32Array {
+    if (module._malloc && module._free && module.HEAPU8 && decoder.GetTrianglesUInt32Array) {
+        const length = mesh.num_faces() * 3;
+        const byteLength = length * Uint32Array.BYTES_PER_ELEMENT;
+        const pointer = module._malloc(byteLength);
+        if (!pointer && byteLength > 0) throw new MeshQuiltError("Draco index allocation failed");
+        try {
+            if (decoder.GetTrianglesUInt32Array(mesh, byteLength, pointer) === false)
+                throw new MeshQuiltError("Draco failed to read triangle indices");
+            return new Uint32Array(module.HEAPU8.buffer, pointer, length).slice();
+        } finally {
+            module._free(pointer);
+        }
+    }
     const faces = new module.DracoInt32Array();
     try {
         const index = new Uint32Array(mesh.num_faces() * 3);

@@ -62,6 +62,8 @@ The pool copies each chunk only when a Worker becomes available, then transfers 
 
 ## Decode
 
+For large UI workloads, `encodeDracoInWorker` provides an optional whole-pipeline Worker encoder. It preserves shared position quantization and supports input transfer, cancellation and typed progress. See [performance and ownership](performance.md) before enabling transferInput.
+
 ```ts
 import { decodeDracoChunk } from "meshquilt/draco";
 

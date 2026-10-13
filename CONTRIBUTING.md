@@ -34,6 +34,10 @@ pnpm test:workers
 
 Edit `packages/meshquilt/src/runtime/worker.ts` and the shared encoder source, then rebuild. The checked-in `worker/encode.worker.js` is generated; its source is linted and type checked. Keep its public export a classic Worker asset.
 
+## Performance benchmarks
+
+Run `pnpm bench` through Vitest for geometry/codec stages, and `pnpm bench:browser` through the existing Playwright config for UI responsiveness and WASM capacity. Keep benchmark fixtures in TypeScript and reuse them across runners. Worker integration tests share the same Playwright asset fixture. Timing thresholds are not part of normal CI. See [benchmark methods](docs/performance.md).
+
 ## Website development
 
 Run `pnpm site` to start the independent React website. See [website setup](apps/site/README.md) for the design, content, and Pages configuration. When changing website behavior, install Chromium once and run the browser checks:

@@ -76,6 +76,8 @@ TypeScript7用于构建和类型检查，TypeScript6为当前 ESLint 提供兼�
 
 本地发布准备见 [releasing.md](docs/releasing.md)。pnpm release:check vX.Y.Z 校验版本、标签与更新记录。GitHub 发布工作流默认仅检查并生成安装包；尚未配置远程或 npm 发布，本地包元数据不填写虚构仓库地址。
 
+性能基准统一使用 pnpm bench（TypeScript Vitest）与 pnpm bench:browser（Playwright），共享夹具，不维护独立 mjs runner。百万面模型的整体 Worker、所有权与本机量化结果见[性能说明](docs/zh/performance.md)。
+
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。Draco 二进制使用 Apache-2.0。

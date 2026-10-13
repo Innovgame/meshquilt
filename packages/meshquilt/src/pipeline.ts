@@ -5,7 +5,7 @@ import {
     DEFAULT_MAX_TRIANGLES,
     type QuantBits
 } from "./quantization/quant.js";
-import { iterateGeometry, validateGeometry } from "./geometry/split.js";
+import { iterateValidatedGeometry, validateGeometry } from "./geometry/split.js";
 import {
     MeshQuiltError,
     type ChunkDecoder,
@@ -46,7 +46,7 @@ export async function encodeGeometry(geometry: GeometryInput, options: EncodeGeo
     const report = () => options.onProgress?.({ stage: "encode", completedChunks, totalChunks });
     report();
 
-    const pieces = iterateGeometry(geometry, maxTriangles);
+    const pieces = iterateValidatedGeometry(geometry, maxTriangles);
     const encoded = await mapPool(
         pieces,
         options.concurrency ?? 1,

@@ -4,6 +4,10 @@ This file records changes that users can see. Versions follow repository tags, f
 
 ## Unreleased
 
+- Add standard Vitest/TypeScript geometry benchmarks and Playwright Worker/responsiveness measurements sharing fixtures; remove the standalone Worker integration runner.
+- Speed up nonindexed splitting, indexed vertex remapping and attribute copies; avoid duplicate full validation and use optional Draco bulk decode APIs with portable fallback.
+- Add whole-pipeline `encodeDracoInWorker` with explicit input ownership transfer, typed progress and cancellation for large browser workloads.
+
 - Add release tag/version/changelog guards and a manual dry-run-by-default npm workflow with GitHub-derived metadata and optional trusted publishing.
 
 - Consolidate publication into `meshquilt`, `meshquilt/draco` and the `meshquilt/worker` asset. Move Three.js conversion and its tests into a private source example; the library has no runtime or peer dependencies.

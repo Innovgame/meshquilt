@@ -35,7 +35,7 @@
     "scripts": {
         "build": "node ../../node_modules/typescript-compiler/bin/tsc -p tsconfig.json && node scripts/build-worker.mjs",
         "prepack": "pnpm build",
-        "test:browser": "node scripts/test-browser.mjs"
+        "test:browser": "pnpm --filter @meshquilt/site exec playwright test --project library-workers"
     },
     "devDependencies": {
         "@playwright/test": "^1.64.0",

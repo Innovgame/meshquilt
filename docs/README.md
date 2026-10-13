@@ -10,6 +10,7 @@ These are the user-facing docs:
 - [Three.js integration example](three.md)
 - [Package migration](migration.md)
 - [Local release preparation](releasing.md)
+- [Performance and benchmarks](performance.md)
 
 - [Quantization and seams](quantization.md)
 - [Container format](container-format.md)

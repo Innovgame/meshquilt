@@ -99,6 +99,7 @@ test("all docs load directly, survive refresh, and use valid internal navigation
         "quantization",
         "container-format",
         "runtime",
+        "performance",
         "migration",
         "releasing",
         "contributing",

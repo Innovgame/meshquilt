@@ -8,6 +8,8 @@
 
 ## 调度与所有权
 
+超大模型可用 encodeDracoInWorker，把校验、量化、分块和编码都移到单个专用 Worker。显式 transferInput: true 转移输入所有权，避免复制完整模型；适合优先主线程响应与较少 WASM 堆的场景。详见[性能与基准](performance.md)。
+
 建议2–4个 Worker，并让 encodeGeometry 的 concurrency 与池大小匹配。核心按需生成块，池仅在 Worker 空闲时复制并转移输入的副本，不分离调用方数组。
 
 ## 失败与取消

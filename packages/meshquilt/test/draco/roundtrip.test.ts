@@ -45,3 +45,23 @@ it.each([0, 8, 14, 30])(
 it("rejects corrupt Draco bytes with a useful error", () => {
     expect(() => decodeDracoChunk(decoder, new Uint8Array([1, 2, 3]))).toThrow(/Draco/);
 });
+
+it("uses bulk WASM reads when available and matches the portable fallback exactly", async () => {
+    const bytes = await encodeGeometry(geometry, { encodeChunk: createDracoChunkEncoder(encoder) });
+    const payload = (await import("meshquilt")).decodeContainer(bytes).chunks[0]!;
+    const OriginalDecoder = decoder.Decoder;
+    const bulkModule = {
+        ...decoder,
+        Decoder: class extends OriginalDecoder {
+            GetFaceFromMesh(): never {
+                throw new Error("per-face WASM calls must not be used with bulk API");
+            }
+            GetAttributeFloatForAllPoints(): never {
+                throw new Error("per-value WASM reads must not be used with bulk API");
+            }
+        }
+    };
+    const bulk = decodeDracoChunk(bulkModule, payload);
+    const fallback = decodeDracoChunk({ ...decoder, _malloc: undefined }, payload);
+    expect(bulk).toEqual(fallback);
+});

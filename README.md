@@ -95,6 +95,7 @@ Encoding creates chunks lazily, but source attributes, compressed results and fi
 - [Runtime and memory](docs/runtime-and-memory.md)
 - [Migration from scoped packages](docs/migration.md)
 - [Local release preparation](docs/releasing.md)
+- [Performance and benchmarks](docs/performance.md)
 
 If the package has not yet been published to your registry, use the local workspace.
 
@@ -118,6 +119,8 @@ pnpm build
 The independent React website includes real geometry splitting, searchable docs, English/Chinese and light/dark themes. See [website setup](apps/site/README.md) for GitHub Pages. Choose GitHub Actions as the Pages source.
 
 TypeScript7 runs builds/typechecks; TypeScript6 supplies the API needed by the current ESLint parser. Three.js minimum-version tests belong only to the private example. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Use `pnpm bench` for the TypeScript Vitest benchmark suite and `pnpm bench:browser` for Playwright main-thread/Worker measurements. Both share fixtures; no standalone benchmark runner is maintained. For million-plus triangle UI workloads, see encodeDracoInWorker and input-ownership guidance in the performance doc.
 
 ## License
 

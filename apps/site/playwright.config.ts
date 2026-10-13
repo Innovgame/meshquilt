@@ -17,6 +17,20 @@ export default defineConfig({
         {
             name: "mobile",
             use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
+        },
+        {
+            name: "library-workers",
+            testDir: "../../packages/meshquilt/test/browser",
+            testMatch: "**/workers.spec.ts",
+            outputDir: "../../.tmp/library-workers"
+        },
+        {
+            name: "library-performance",
+            testDir: "../../packages/meshquilt/bench",
+            testMatch: "**/*.perf.spec.ts",
+            outputDir: "../../.tmp/performance/playwright",
+            timeout: 120_000,
+            use: { launchOptions: { args: ["--enable-precise-memory-info"] } }
         }
     ],
     webServer: {

@@ -133,6 +133,13 @@ export const docs: Doc[] = [
         "concepts"
     ),
     page(
+        "performance",
+        "performance",
+        ["Performance & benchmarks", "性能与基准"],
+        ["Measured stages, memory trade-offs and UI responsiveness.", "分阶段测量、内存取舍与界面响应。"],
+        "concepts"
+    ),
+    page(
         "migration",
         "migration",
         ["Package migration", "单包迁移"],

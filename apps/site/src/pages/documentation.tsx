@@ -26,7 +26,16 @@ function docLink(href: string) {
     if (path.endsWith("container-format.md")) return "#/docs/container-format";
     if (path.endsWith("runtime-and-memory.md")) return "#/docs/runtime";
     if (path.endsWith("geometry.md")) return "#/docs/core";
-    for (const name of ["quick-start", "introduction", "draco", "workers", "three", "migration", "releasing"]) {
+    for (const name of [
+        "quick-start",
+        "introduction",
+        "draco",
+        "workers",
+        "three",
+        "migration",
+        "releasing",
+        "performance"
+    ]) {
         if (path.endsWith(`${name}.md`)) return `#/docs/${name}`;
     }
     if (path.endsWith("CONTRIBUTING.md")) return "#/docs/contributing";

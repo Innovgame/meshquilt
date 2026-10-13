@@ -28,7 +28,8 @@ export function validateGeometry(geometry: GeometryInput): void {
         uv: geometry.uv
     })) {
         if (!values) continue;
-        for (const value of values) {
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i]!;
             if (!Number.isFinite(value)) throw new MeshQuiltError(`${name} values must be finite`);
         }
     }
@@ -49,6 +50,11 @@ export function* iterateGeometry(geometry: GeometryInput, maxTriangles: number):
     if (!Number.isInteger(maxTriangles) || maxTriangles < 1) {
         throw new MeshQuiltError("maxTriangles must be an integer >= 1");
     }
+    yield* iterateValidatedGeometry(geometry, maxTriangles);
+}
+
+/** Internal pipeline entry after validation. Never exported from the package root. */
+export function* iterateValidatedGeometry(geometry: GeometryInput, maxTriangles: number): Generator<ChunkGeometry> {
     const indexCount = geometry.index?.length ?? geometry.position.length / 3;
     const triangleCount = indexCount / 3;
     if (triangleCount <= maxTriangles) {
@@ -56,14 +62,32 @@ export function* iterateGeometry(geometry: GeometryInput, maxTriangles: number):
         else
             yield {
                 ...geometry,
-                index: geometry.index
-                    ? new Uint32Array(geometry.index)
-                    : Uint32Array.from({ length: indexCount }, (_, index) => index)
+                index: geometry.index ? new Uint32Array(geometry.index) : sequentialIndex(indexCount)
             };
         return;
     }
 
-    const vertexMap = new Map<number, number>();
+    if (!geometry.index) {
+        // Triangle soup has no shared vertex IDs to remap. Copy contiguous attributes directly.
+        for (let start = 0; start < indexCount; start += maxTriangles * 3) {
+            const end = Math.min(start + maxTriangles * 3, indexCount);
+            const chunk: ChunkGeometry = {
+                position: geometry.position.slice(start * 3, end * 3),
+                index: sequentialIndex(end - start)
+            };
+            if (geometry.normal) chunk.normal = geometry.normal.slice(start * 3, end * 3);
+            if (geometry.uv) chunk.uv = geometry.uv.slice(start * 2, end * 2);
+            yield chunk;
+        }
+        return;
+    }
+
+    const vertexCount = geometry.position.length / 3;
+    // A bounded dense lookup avoids Map entries/GC for locally indexed meshes. Sparse inputs
+    // retain the Map path, so this cannot allocate an unbounded source-sized lookup table.
+    const dense = vertexCount <= maxTriangles * 6 ? new Uint32Array(vertexCount) : undefined;
+    const touched = dense ? new Uint32Array(Math.min(vertexCount, maxTriangles * 3)) : undefined;
+    const vertexMap = dense ? undefined : new Map<number, number>();
     const positions = new Float32Array(maxTriangles * 9);
     const indices = new Uint32Array(maxTriangles * 3);
     const normals = geometry.normal ? new Float32Array(maxTriangles * 9) : undefined;
@@ -78,7 +102,9 @@ export function* iterateGeometry(geometry: GeometryInput, maxTriangles: number):
         };
         if (normals && geometry.normal) chunk.normal = normals.slice(0, localVertices * 3);
         if (uvs && geometry.uv) chunk.uv = uvs.slice(0, localVertices * 2);
-        vertexMap.clear();
+        if (dense && touched) {
+            for (let i = 0; i < localVertices; i++) dense[touched[i]!] = 0;
+        } else vertexMap!.clear();
         localVertices = 0;
         localTriangles = 0;
         return chunk;
@@ -86,17 +112,31 @@ export function* iterateGeometry(geometry: GeometryInput, maxTriangles: number):
 
     for (let i = 0; i < indexCount; i += 3) {
         for (let corner = 0; corner < 3; corner++) {
-            const source = geometry.index?.[i + corner] ?? i + corner;
-            let local = vertexMap.get(source);
+            const source: number = geometry.index[i + corner]!;
+            let local: number | undefined = dense
+                ? dense[source]
+                    ? dense[source]! - 1
+                    : undefined
+                : vertexMap!.get(source);
             if (local === undefined) {
                 local = localVertices++;
-                vertexMap.set(source, local);
-                positions.set(geometry.position.subarray(source * 3, source * 3 + 3), local * 3);
+                if (dense && touched) {
+                    dense[source] = local + 1;
+                    touched[local] = source;
+                } else vertexMap!.set(source, local);
+                const src = source * 3;
+                const dst = local * 3;
+                positions[dst] = geometry.position[src]!;
+                positions[dst + 1] = geometry.position[src + 1]!;
+                positions[dst + 2] = geometry.position[src + 2]!;
                 if (normals && geometry.normal) {
-                    normals.set(geometry.normal.subarray(source * 3, source * 3 + 3), local * 3);
+                    normals[dst] = geometry.normal[src]!;
+                    normals[dst + 1] = geometry.normal[src + 1]!;
+                    normals[dst + 2] = geometry.normal[src + 2]!;
                 }
                 if (uvs && geometry.uv) {
-                    uvs.set(geometry.uv.subarray(source * 2, source * 2 + 2), local * 2);
+                    uvs[local * 2] = geometry.uv[source * 2]!;
+                    uvs[local * 2 + 1] = geometry.uv[source * 2 + 1]!;
                 }
             }
             indices[localTriangles * 3 + corner] = local;
@@ -105,6 +145,12 @@ export function* iterateGeometry(geometry: GeometryInput, maxTriangles: number):
         if (localTriangles >= maxTriangles) yield flush();
     }
     if (localTriangles > 0) yield flush();
+}
+
+function sequentialIndex(count: number): Uint32Array {
+    const index = new Uint32Array(count);
+    for (let i = 0; i < count; i++) index[i] = i;
+    return index;
 }
 
 function isNormalized(geometry: GeometryInput): geometry is ChunkGeometry {

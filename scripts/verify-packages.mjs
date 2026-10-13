@@ -40,7 +40,7 @@ try {
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
 import { encodeGeometry, decodeGeometry, splitGeometry } from "meshquilt";
-import { createDracoChunkEncoder, createDracoWorkerPool } from "meshquilt/draco";
+import { createDracoChunkEncoder, createDracoWorkerPool, encodeDracoInWorker } from "meshquilt/draco";
 const geometry = { position: new Float32Array([0,0,0,1,0,0,0,1,0]) };
 const chunks = splitGeometry(geometry, 1);
 assert.deepEqual(chunks[0].index, new Uint32Array([0,1,2]));
@@ -49,6 +49,7 @@ const decoded = await decodeGeometry(bytes, () => chunks[0]);
 assert.equal(decoded.chunks.length, 1);
 assert.equal(typeof createDracoChunkEncoder, "function");
 assert.equal(typeof createDracoWorkerPool, "function");
+assert.equal(typeof encodeDracoInWorker, "function");
 assert.equal(globalThis.onmessage, undefined, "import must not install worker handlers");
 assert.throws(() => import.meta.resolve("meshquilt/three"), /not defined by "exports"/);
 assert.throws(() => import.meta.resolve("three"), /Cannot find package/);
@@ -63,14 +64,15 @@ console.log("Packed meshquilt: root/draco/worker exports, triangle soup, no Thre
         `
 import { encodeGeometry, decodeGeometry } from "meshquilt";
 import type { GeometryInput, GeometryProgress, EncodeGeometryOptions, DecodeGeometryOptions, QuantBits } from "meshquilt";
-import type { DracoWorkerPoolOptions } from "meshquilt/draco";
+import type { DracoWorkerPoolOptions, DracoGeometryWorkerOptions } from "meshquilt/draco";
 const geometry: GeometryInput = { position: new Float32Array(9), index: new Uint16Array([0,1,2]) };
 const quant: QuantBits = { positionBits: 14 };
 const progress = (event: GeometryProgress) => { void event.completedChunks; };
 const encode: EncodeGeometryOptions = { ...quant, encodeChunk: () => new Uint8Array([1]), onProgress: progress };
 const decode: DecodeGeometryOptions = { copyChunks: false, onProgress: progress };
 const worker: DracoWorkerPoolOptions = { workerUrl: "worker.js", encoderScriptUrl: "encoder.js" };
-void [geometry, encode, decode, worker, encodeGeometry, decodeGeometry];
+const wholeWorker: DracoGeometryWorkerOptions = { ...worker, transferInput: true };
+void [geometry, encode, decode, worker, wholeWorker, encodeGeometry, decodeGeometry];
 `
     );
     run(

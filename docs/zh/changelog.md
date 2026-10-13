@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 新增标准 TypeScript Vitest 性能基准与 Playwright Worker/响应性测量，共享夹具并移除独立 Worker 集成脚本。
+- 优化无索引分块、索引映射、属性复制和重复校验，Draco 解码采用可选批量 API 与兼容回退。
+- 新增整体 encodeDracoInWorker，支持显式所有权转移、类型化进度和取消。
+
 - 新增发布标签、版本和更新记录校验，以及默认仅验收安装包的手动发布工作流。实际仓库元数据在 GitHub 发布环境中生成，本地不配置远程或发布。
 
 - 归并为一个 meshquilt 发布包，提供根、Draco及Worker三个入口。
