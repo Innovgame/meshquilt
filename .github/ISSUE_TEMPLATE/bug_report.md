@@ -17,7 +17,7 @@ labels: bug
 ## Environment
 
 - MeshQuilt version or commit:
-- Surface: `@meshquilt/core` / `@meshquilt/three` / `@meshquilt/draco` / demo
+- Surface: `meshquilt` / `meshquilt/draco` / Worker / Three.js example / website
 - Browser and operating system:
 - Triangle count and chunk size:
 

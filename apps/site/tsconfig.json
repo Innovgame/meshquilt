@@ -7,7 +7,8 @@
         "types": ["vite/client", "node"],
         "paths": {
             "@/*": ["./src/*"],
-            "@meshquilt/core": ["../../packages/core/src/index.ts"]
+            "meshquilt": ["../../packages/meshquilt/src/index.ts"],
+            "meshquilt/draco": ["../../packages/meshquilt/src/codecs/draco/index.ts"]
         }
     },
     "include": ["src", "tests", "vite.config.ts", "playwright.config.ts"]

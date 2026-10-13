@@ -1,0 +1,94 @@
+name: npm release
+
+on:
+    workflow_dispatch:
+        inputs:
+            publish:
+                description: Publish to npm after validation (default is dry run)
+                default: false
+                type: boolean
+
+permissions:
+    contents: read
+
+concurrency:
+    group: npm-release
+    cancel-in-progress: false
+
+jobs:
+    package:
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        outputs:
+            npm_tag: ${{ steps.metadata.outputs.npm_tag }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Validate tag and select release commit
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: |
+                  if [[ "$GITHUB_REF_TYPE" != tag ]]; then
+                      echo "Select the release tag under 'Use workflow from' when starting this workflow."
+                      exit 1
+                  fi
+                  [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || exit 1
+                  git show-ref --verify "refs/tags/$RELEASE_TAG"
+                  git merge-base --is-ancestor "refs/tags/$RELEASE_TAG" origin/main
+                  # The workflow ref is the release tag, so npm provenance identifies its commit.
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10.33.0
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm check
+            - run: pnpm test
+            - run: pnpm test:release
+            - run: pnpm test:packages
+            - name: Verify browser Workers
+              run: |
+                  pnpm --filter meshquilt exec playwright install --with-deps chromium
+                  pnpm test:workers
+            - name: Validate version and prepare actual repository metadata
+              id: metadata
+              env:
+                  RELEASE_TAG: ${{ github.ref_name }}
+              run: pnpm release:check "$RELEASE_TAG" --prepare
+            - name: Pack the validated library
+              run: |
+                  mkdir -p release-artifact
+                  pnpm --filter meshquilt pack --pack-destination "$GITHUB_WORKSPACE/release-artifact"
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: npm-package
+                  path: release-artifact/*.tgz
+                  if-no-files-found: error
+            - name: Dry-run npm publish
+              run: npm publish release-artifact/*.tgz --dry-run --access public
+
+    publish:
+        if: inputs.publish
+        needs: package
+        runs-on: ubuntu-24.04
+        timeout-minutes: 10
+        environment: npm-release
+        permissions:
+            contents: read
+            id-token: write
+        steps:
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+            - uses: actions/download-artifact@v4
+              with:
+                  name: npm-package
+                  path: release-artifact
+            - name: Publish the verified archive using npm trusted publishing
+              env:
+                  NPM_TAG: ${{ needs.package.outputs.npm_tag }}
+              run: npm publish release-artifact/*.tgz --access public --provenance --tag "$NPM_TAG"

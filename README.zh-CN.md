@@ -2,94 +2,80 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-在浏览器里把 `THREE.Mesh` 切成块，并行压缩，再按块画回去。接缝上的位置和 UV 仍落在同一套量化网格上。
+面向原始几何数组的 TypeScript 网格编解码库：将三角网格分块、并行压缩，解码后的块共享量化网格，避免边界裂缝。
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+版本0.1.0，见 [CHANGELOG.md](CHANGELOG.md)。单包重构没有改变 MQLT 格式与量化默认值。
 
-版本 `0.1.0`。变更记录在 [CHANGELOG.md](CHANGELOG.md)。
+## 一个发布包，三个入口
 
-3MF、glTF、STL 不在这个库里解析。先把它们装成 `THREE.Mesh`，再交给 MeshQuilt。
+| 导入入口         | 职责                                                    |
+| ---------------- | ------------------------------------------------------- |
+| meshquilt        | 几何类型、惰性分块、共享量化、MQLT 容器和编解码流水线。 |
+| meshquilt/draco  | 可注入的 Draco 编解码适配器及浏览器 Worker 池。         |
+| meshquilt/worker | 由应用部署的经典 Worker 文件。                          |
 
-## 包
-
-| 包                 | 作用                                                               |
-| ------------------ | ------------------------------------------------------------------ |
-| `@meshquilt/core`  | 切块、共用量化范围、`MQLT` 容器。不依赖 three.js，也不依赖 Draco。 |
-| `@meshquilt/three` | 读取 `THREE.Mesh`，把解码后的块放进一个 `Group`。                  |
-| `@meshquilt/draco` | Draco 编解码适配，以及 worker 池。                                 |
-| `@meshquilt/demo`  | 在浏览器里看分块和接缝。                                           |
-| `@meshquilt/site`  | 独立的开源官网与可搜索文档，用于 GitHub Pages。                    |
+发布包没有运行时依赖或 peer dependency。Three.js 接入代码位于私有 [examples/three](examples/three/README.md) 示例，不再独立发布。根工作区与官网也不发布。
 
 ## 快速开始
 
 ```bash
-pnpm install
-pnpm demo
+npm install meshquilt
 ```
 
-```ts
-import { decodeMesh, encodeMesh } from "@meshquilt/three";
-import { createDracoChunkEncoder, decodeDracoChunk } from "@meshquilt/draco";
+若包尚未发布到你的注册源，请使用本地 pnpm 工作区。
 
-const encoderModule = await DracoEncoderModule({});
-const buffer = await encodeMesh(mesh, {
+```ts
+import { encodeGeometry, decodeGeometry } from "meshquilt";
+import { createDracoChunkEncoder, decodeDracoChunk } from "meshquilt/draco";
+
+const geometry = {
+    position: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    index: new Uint16Array([0, 1, 2])
+};
+// 自行加载 Draco 构建，先初始化 encoderModule 与 decoderModule。
+const bytes = await encodeGeometry(geometry, {
     maxTriangles: 100_000,
     encodeChunk: createDracoChunkEncoder(encoderModule)
 });
-
-const group = await decodeMesh(buffer, (bytes) => decodeDracoChunk(decoderModule, bytes), mesh);
-mesh.parent?.add(group);
+const { chunks } = await decodeGeometry(bytes, (payload) => decodeDracoChunk(decoderModule, payload));
 ```
 
-`createDracoChunkEncoder` 不能在同一个 Draco 模块上并发调用。要并行编码，用 `createDracoWorkerPool`，池大小保持在 2 到 4。每个 worker 里都有一块几何体和一份 wasm 堆。
+输入支持 Uint16/Uint32 索引；省略索引表示逐三个顶点组成三角形。可选法线和 UV 为逐顶点属性；编码器输入与解码结果统一使用 Uint32 索引。文件加载、材质、变换及绘制由应用负责，平滑法线应在完整网格上预计算。默认位置14位、法线8位、UV10位，0表示禁用该属性量化。
 
-## 它做什么
+并行编码使用2–4个 Worker，concurrency 与池大小匹配。单个 Draco 模块不可重入。应用自行提供编码脚本与匹配的 WASM。onProgress 提供阶段、已完成块数与总块数；取消使用 AbortSignal。
 
-- 把带索引的三角网格切成块，编码器不必一次看见整份顶点缓冲。
-- 先为整张网格算一套位置范围和一套 UV 范围，每一块都按这套范围量化。
-- 法线走 Draco 的八面体网格。位数相同，原来相同的单位法线在块之间仍然对齐。
-- 用一个小的 `MQLT` 容器装每块的字节。容器本身不要求 Draco。Draco 适配器只是你可以传进去的一种编码器。
-- 解码结果是分开的网格。库不会把它们再焊成一份大缓冲。
+## 文档与官网
 
-## 限制
-
-- 一个源网格只有一种材质。多材质要先拆开再编码。
-- 骨骼、实例化和 morph-target 网格需先烘焙成静态几何；部分 drawRange 需提取为独立几何。
-- UV 是 2 分量。位置和法线是 3 分量。
-- 平滑法线要在切块之前，在完整网格上算好。按块算法线会把切口变成硬边。
-- 某项位数为 `0` 时，不为该项设置量化。默认是位置 14、法线 8、UV 10。
-- 演示页不附带 `draco_encoder.js`。Draco 构建需要自己加载。Draco 使用 Apache-2.0。
-
-细节见 [量化与接缝](docs/quantization.md) 和 [容器格式](docs/container-format.md)。
-
-## 项目官网
-
-独立的 React 官网包含真实网格分块交互、可搜索文档、中英文切换和明暗主题。
+[快速上手](docs/quick-start.md)、[几何 API](docs/geometry.md)、[Draco](docs/draco.md)、[Worker](docs/workers.md)、[Three.js 示例](docs/three.md)、[量化与接缝](docs/quantization.md)、[容器格式](docs/container-format.md)、[运行时与内存](docs/runtime-and-memory.md)、[迁移说明](docs/migration.md)。
 
 ```bash
+pnpm install
 pnpm site
 pnpm site:build
 pnpm site:preview
 ```
 
-GitHub Pages 部署说明见 [官网 README](apps/site/README.md)。在仓库 Settings → Pages 中选择 GitHub Actions，工作流将在 main 分支更新后部署。
+官网包含真实几何交互、文档搜索、中英文切换和明暗主题。部署说明见 [apps/site/README.md](apps/site/README.md)，Pages Source 选择 GitHub Actions。
 
 ## 开发
 
-需要 Node.js 22.12+、24+ 或 26+，以及 pnpm 10.33.0。
+Node.js22.12+、24+或26+，pnpm10.33.0。
 
 ```bash
-pnpm install
 pnpm check
 pnpm test
 pnpm test:packages
+pnpm test:release
+pnpm --filter meshquilt exec playwright install chromium
+pnpm test:workers
+pnpm site:test
 pnpm build
 ```
 
-`pnpm check` 会跑 Prettier、ESLint 和 TypeScript 工程检查。参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+TypeScript7用于构建和类型检查，TypeScript6为当前 ESLint 提供兼容 API。最低版本 Three 测试夹具仅属于私有示例。见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-编码现在按需生成几何块，但源网格和完整压缩输出仍占用内存。所有权、取消、Worker 失败处理和零拷贝解码见 [运行时与内存](docs/runtime-and-memory.md)。构建使用 TypeScript 7；因当前 ESLint 解析器的 API 限制，并行保留 TypeScript 6。
+本地发布准备见 [releasing.md](docs/releasing.md)。pnpm release:check vX.Y.Z 校验版本、标签与更新记录。GitHub 发布工作流默认仅检查并生成安装包；尚未配置远程或 npm 发布，本地包元数据不填写虚构仓库地址。
 
 ## 许可
 
-MIT。见 [LICENSE](LICENSE)。
+MIT，见 [LICENSE](LICENSE)。Draco 二进制使用 Apache-2.0。

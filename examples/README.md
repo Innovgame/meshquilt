@@ -11,8 +11,8 @@ It builds a terrain `THREE.Mesh`, splits it, and colors each chunk. The stats co
 A minimal encode and decode looks like this:
 
 ```ts
-import { decodeMesh, encodeMesh } from "@meshquilt/three";
-import { createDracoChunkEncoder, decodeDracoChunk } from "@meshquilt/draco";
+import { decodeMesh, encodeMesh } from "./three/integration";
+import { createDracoChunkEncoder, decodeDracoChunk } from "meshquilt/draco";
 
 const encoderModule = await DracoEncoderModule({});
 const buffer = await encodeMesh(mesh, {

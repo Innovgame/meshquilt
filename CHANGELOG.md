@@ -4,6 +4,12 @@ This file records changes that users can see. Versions follow repository tags, f
 
 ## Unreleased
 
+- Add release tag/version/changelog guards and a manual dry-run-by-default npm workflow with GitHub-derived metadata and optional trusted publishing.
+
+- Consolidate publication into `meshquilt`, `meshquilt/draco` and the `meshquilt/worker` asset. Move Three.js conversion and its tests into a private source example; the library has no runtime or peer dependencies.
+- Accept Uint16Array, Uint32Array and nonindexed geometry inputs. Normalize codec/output indices to Uint32 per chunk and add typed encode/decode progress events.
+- Reorganize internal geometry/quantization/container/codec/runtime modules and migrate documentation, website, examples and consumer checks while preserving MQLT v1.
+
 - End queued and active Worker jobs on disposal, cancellation, timeout or runtime failure; clean up partial startup and share one typed encoder implementation between main thread and Workers.
 - Produce geometry chunks lazily during encoding, stop scheduling on the first failure, and add opt-in zero-copy compressed payload decoding.
 - Reject non-finite geometry and invalid MQLT metadata; normalize shared quantization to header float32 precision.

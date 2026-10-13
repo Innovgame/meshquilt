@@ -95,9 +95,12 @@ test("all docs load directly, survive refresh, and use valid internal navigation
         "core",
         "three",
         "draco",
+        "workers",
         "quantization",
         "container-format",
         "runtime",
+        "migration",
+        "releasing",
         "contributing",
         "changelog"
     ]) {
@@ -108,7 +111,7 @@ test("all docs load directly, survive refresh, and use valid internal navigation
     }
     await page.goto("./#/docs/core");
     await page.reload();
-    await expect(page.locator("h1")).toHaveText("@meshquilt/core");
+    await expect(page.locator("h1")).toHaveText("meshquilt");
     await page.locator(".markdown-content").getByRole("link", { name: "container format" }).click();
     await expect(page.locator("h1")).toHaveText("Container format");
     await page.goto("./#/docs/missing");

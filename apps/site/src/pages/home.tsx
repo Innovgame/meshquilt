@@ -304,18 +304,18 @@ export function Home({ section }: { section?: string }) {
                         </h2>
                         <p>
                             {t(
-                                "Keep your Three.js workflow. Add an encoder, set a chunk budget, and let MeshQuilt handle the split and the shared quantization.",
-                                "延续现有 Three.js 工作流，添加编码器、设置分块上限，剩下的拆分与共享量化交给 MeshQuilt。"
+                                "Pass your geometry arrays. Add a codec, set a chunk budget, and let MeshQuilt handle splitting and shared quantization.",
+                                "传入原始几何数组，添加编解码器、设置分块上限，剩下的拆分与共享量化交给 MeshQuilt。"
                             )}
                         </p>
                         <ul className="code-benefits">
                             <li>
                                 <Check size={16} />
-                                {t("Indexed triangle geometry", "索引三角网格")}
+                                {t("Uint16, Uint32, or nonindexed input", "Uint16、Uint32 或无索引输入")}
                             </li>
                             <li>
                                 <Check size={16} />
-                                {t("Source material and local transforms", "继承源材质与局部变换")}
+                                {t("Typed progress and cancellation", "类型化进度与取消")}
                             </li>
                             <li>
                                 <Check size={16} />
@@ -358,7 +358,7 @@ export function Home({ section }: { section?: string }) {
                             {t("Designed to fit, not take over", "融入应用，各司其职")}
                         </p>
                         <h2>
-                            {t("Three packages.", "三个包。")}
+                            {t("One package.", "一个发布包。")}
                             <br />
                             {t("Clear boundaries.", "清晰边界。")}
                         </h2>
@@ -377,31 +377,31 @@ export function Home({ section }: { section?: string }) {
                             icon: Layers3,
                             color: "blue",
                             label: t("The foundation", "基础层"),
-                            name: "@meshquilt/core",
+                            name: "meshquilt",
                             description: t(
                                 "Splitting, shared quantization, and the MQLT container. No Three.js. No Draco.",
                                 "分块、共享量化与 MQLT 容器，不依赖 Three.js 或 Draco。"
                             ),
-                            tags: ["GeometryBuffers", "encodeGeometry"]
+                            tags: ["GeometryInput", "encodeGeometry"]
                         },
                         {
-                            id: "three",
+                            id: "workers",
                             icon: Box,
                             color: "mint",
-                            label: t("The scene adapter", "场景适配器"),
-                            name: "@meshquilt/three",
+                            label: t("The browser runtime", "浏览器运行时"),
+                            name: "meshquilt/worker",
                             description: t(
-                                "Read a THREE.Mesh. Render separate decoded chunks in a Group with your material.",
-                                "读取 THREE.Mesh，使用原材质将独立的解码块绘制为 Group。"
+                                "Serve the classic Worker asset. Encode in isolated modules with explicit lifetime and ownership.",
+                                "部署经典 Worker 文件，使用隔离模块编码，明确生命周期与缓冲区所有权。"
                             ),
-                            tags: ["THREE.Mesh", "THREE.Group"]
+                            tags: ["Classic Worker", "AbortSignal"]
                         },
                         {
                             id: "draco",
                             icon: Boxes,
                             color: "coral",
                             label: t("The compression adapter", "压缩适配器"),
-                            name: "@meshquilt/draco",
+                            name: "meshquilt/draco",
                             description: t(
                                 "Draco encode and decode adapters, plus a pool of isolated encoding workers.",
                                 "Draco 编解码适配器，以及隔离实例的编码 Worker 池。"
@@ -427,7 +427,7 @@ export function Home({ section }: { section?: string }) {
                 </div>
                 <div className="architecture-note">
                     <Workflow size={17} />
-                    <code>THREE.Mesh</code>
+                    <code>GeometryInput</code>
                     <ArrowRight size={14} />
                     <span>{t("split + quantize", "分块 + 量化")}</span>
                     <ArrowRight size={14} />
@@ -435,7 +435,7 @@ export function Home({ section }: { section?: string }) {
                     <ArrowRight size={14} />
                     <code>MQLT</code>
                     <ArrowRight size={14} />
-                    <code>THREE.Group</code>
+                    <code>ChunkGeometry[]</code>
                 </div>
             </section>
 

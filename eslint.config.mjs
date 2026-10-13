@@ -4,12 +4,12 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig([
     {
-        ignores: ["**/dist/**", "**/node_modules/**", ".tmp/**", "coverage/**", "packages/draco/worker/**"]
+        ignores: ["**/dist/**", "**/node_modules/**", ".tmp/**", "coverage/**", "packages/meshquilt/worker/**"]
     },
     eslint.configs.recommended,
     ...tseslint.configs.recommended,
     {
-        files: ["eslint.config.mjs", "scripts/*.mjs", "packages/*/scripts/*.mjs"],
+        files: ["eslint.config.mjs", "scripts/**/*.mjs", "packages/*/scripts/*.mjs"],
         languageOptions: {
             globals: {
                 process: "readonly",

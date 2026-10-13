@@ -25,6 +25,10 @@ function docLink(href: string) {
     if (path.endsWith("quantization.md")) return "#/docs/quantization";
     if (path.endsWith("container-format.md")) return "#/docs/container-format";
     if (path.endsWith("runtime-and-memory.md")) return "#/docs/runtime";
+    if (path.endsWith("geometry.md")) return "#/docs/core";
+    for (const name of ["quick-start", "introduction", "draco", "workers", "three", "migration", "releasing"]) {
+        if (path.endsWith(`${name}.md`)) return `#/docs/${name}`;
+    }
     if (path.endsWith("CONTRIBUTING.md")) return "#/docs/contributing";
     if (path.endsWith("CHANGELOG.md")) return "#/changelog";
     if (path.endsWith("README.md")) return "#/docs/introduction";
@@ -66,7 +70,7 @@ export function Documentation({ id }: { id: string }) {
     const next = docs[current + 1];
     const categories = [
         { id: "start", name: t("Getting started", "开始使用") },
-        { id: "packages", name: t("Packages", "各包文档") },
+        { id: "api", name: t("API & integration", "API 与集成") },
         { id: "concepts", name: t("Under the hood", "实现原理") },
         { id: "project", name: t("Project", "项目") }
     ];

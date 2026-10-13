@@ -15,9 +15,9 @@ pnpm --filter @meshquilt/site exec playwright install chromium
 pnpm site:test
 ```
 
-English is the default. The language and light/dark theme persist locally. English package docs, quantization, container format, contribution guide, and changelog are imported directly from repository Markdown; Chinese translations and the website quick-start guide live in `src/lib/docs.ts`. Update translations when the source docs change. The version comes from the root package metadata.
+English is the default. Language and theme persist locally. API guides live in `docs/`, Chinese translations in `docs/zh/`; `src/lib/docs.ts` maps both sets into the website. The contribution guide and changelog are imported from their canonical root files. Update both languages when APIs change. Version comes from root workspace metadata. Examples use array-first `meshquilt` and `meshquilt/draco`; Three.js is used only to render the preview and in the private integration example.
 
-The 3D preview calls `@meshquilt/core` with a generated indexed torus knot: 7,200 triangles split into 16 chunks of at most 450 triangles. It does not run Draco compression or claim benchmark results. WebGL failure has a readable fallback. Automatic rotation is opt-in, respects reduced motion, and pauses when the preview is outside the viewport or the tab is hidden.
+The 3D preview calls `meshquilt` with a generated indexed torus knot: 7,200 triangles split into 16 chunks of at most 450 triangles. It does not run Draco compression or claim benchmark results. WebGL failure has a readable fallback. Automatic rotation is opt-in, respects reduced motion, and pauses when the preview is outside the viewport or the tab is hidden.
 
 ## GitHub Pages
 

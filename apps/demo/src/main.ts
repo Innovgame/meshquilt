@@ -1,5 +1,5 @@
-import { computeVolume, quantizeComponent, splitGeometry } from "@meshquilt/core";
-import { chunkToGeometry, meshToGeometry } from "@meshquilt/three";
+import { computeVolume, quantizeComponent, splitGeometry } from "meshquilt";
+import { chunkToGeometry, meshToGeometry } from "../../../examples/three/integration";
 import {
     AmbientLight,
     Color,

@@ -2,94 +2,123 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Chunk a `THREE.Mesh` in the browser, compress the pieces in parallel, and draw them back without cracking the seams.
-
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Version `0.1.0`. Changes are in [CHANGELOG.md](CHANGELOG.md).
+Version0.1.0. See [CHANGELOG.md](CHANGELOG.md).
 
-3MF, glTF, and STL stay outside this library. Load those files into a `THREE.Mesh`, then pass the mesh here.
+Array-first TypeScript mesh codec. Split triangle geometry, compress chunks independently, and keep neighboring chunks on one quantization grid.
 
-## Packages
-
-| Package            | Role                                                                           |
-| ------------------ | ------------------------------------------------------------------------------ |
-| `@meshquilt/core`  | Split chunks, shared quantization, `MQLT` container. No three.js and no Draco. |
-| `@meshquilt/three` | Read a `THREE.Mesh` and draw decoded chunks as a `Group`.                      |
-| `@meshquilt/draco` | Draco encode and decode adapters, plus a worker pool.                          |
-| `@meshquilt/demo`  | Browser page for the split and the seam check.                                 |
-| `@meshquilt/site`  | Independent project website and searchable documentation for GitHub Pages.     |
-
-## Quick start
+## Install
 
 ```bash
-pnpm install
-pnpm demo
+npm install meshquilt
 ```
+
+## Encode
 
 ```ts
-import { decodeMesh, encodeMesh } from "@meshquilt/three";
-import { createDracoChunkEncoder, decodeDracoChunk } from "@meshquilt/draco";
+import { encodeGeometry, decodeGeometry } from "meshquilt";
+import { createDracoChunkEncoder, decodeDracoChunk } from "meshquilt/draco";
 
-const encoderModule = await DracoEncoderModule({});
-const buffer = await encodeMesh(mesh, {
+const geometry = {
+    position: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    index: new Uint16Array([0, 1, 2])
+};
+// Load and initialize your own Draco encoder/decoder modules first.
+const bytes = await encodeGeometry(geometry, {
     maxTriangles: 100_000,
-    encodeChunk: createDracoChunkEncoder(encoderModule)
+    encodeChunk: createDracoChunkEncoder(encoderModule),
+    onProgress({ completedChunks, totalChunks }) {
+        console.log(completedChunks, totalChunks);
+    }
 });
-
-const group = await decodeMesh(buffer, (bytes) => decodeDracoChunk(decoderModule, bytes), mesh);
-mesh.parent?.add(group);
+const decoded = await decodeGeometry(bytes, (payload) => decodeDracoChunk(decoderModule, payload));
 ```
 
-`createDracoChunkEncoder` must not run concurrently on one Draco module. For parallel encoding, use `createDracoWorkerPool` and keep the pool at 2 to 4 workers. Each worker holds one chunk and one wasm heap.
+## Entrypoints
 
-## What it does
+- `meshquilt`: geometry types, lazy splitter, shared quantization, MQLT container and codec callback pipeline. No runtime dependencies.
+- `meshquilt/draco`: injected Draco adapters and a browser Worker pool.
+- `meshquilt/worker`: generated classic Worker asset, deployed by your application.
 
-- Splits an indexed triangle mesh into chunks so the encoder never sees the whole vertex buffer at once.
-- Measures one position volume and one UV volume for the source mesh. Every chunk quantizes against those volumes.
-- Leaves normals on Draco's octahedral grid. The same bit count keeps identical unit normals aligned across chunks.
-- Packs chunk bytes in a small `MQLT` container. The container does not require Draco. The Draco adapter is one encoder you can pass in.
-- Returns decoded chunks as separate meshes. It does not weld them back into one buffer.
+There is no published Three.js adapter. Materials, scene transforms, rendering objects and model loading belong to your application. The repository provides tested Three.js integration examples.
 
-## Limits
+## Input and output
 
-- The source mesh has one material. Split multi-material groups before encoding.
-- Bake skinned, instanced and morph-target meshes to static geometry. Extract partial draw ranges before encoding.
-- UV item size is 2. Normal and position item size is 3.
-- Smooth normals must be computed on the complete mesh before the split. Per-chunk normals turn the cut into a hard edge.
-- A bit count of `0` skips quantization for that attribute. Defaults are 14 position bits, 8 normal bits, and 10 UV bits.
-- The demo does not ship `draco_encoder.js`. Load a Draco build yourself. Draco is Apache-2.0.
+GeometryInput accepts tightly packed Float32Array position, optional normal/UV arrays, and Uint16Array or Uint32Array indices. Omit indices for triangle soup. Compute smooth normals on the complete mesh before splitting. Decoded chunks and codec inputs use normalized Uint32Array indices.
 
-Details are in [quantization](docs/quantization.md) and the [container format](docs/container-format.md).
+The single-chunk Uint32 path aliases source geometry. Small Uint16/nonindexed inputs normalize their index while sharing attributes; multi-chunk splits copy attributes. Do not mutate or detach input arrays while encoding.
 
-## Project website
+Defaults are position14, normal8 and UV10 bits. Set an attribute's bits to0 to skip quantization. Every chunk shares the same float32-normalized volume. Explicit volumes need finite origins, positive finite float32 ranges and must cover input values.
 
-The independent React website includes a live mesh splitting visualization, searchable documentation, English/Chinese content, and light/dark themes.
+## Worker pool
 
-```bash
-pnpm site
-pnpm site:build
-pnpm site:preview
+```ts
+import { encodeGeometry } from "meshquilt";
+import { createDracoWorkerPool } from "meshquilt/draco";
+
+const pool = await createDracoWorkerPool({
+    workerUrl,
+    encoderScriptUrl: "/draco/draco_encoder.js",
+    size: 2,
+    timeoutMs: 30_000,
+    signal
+});
+try {
+    const bytes = await encodeGeometry(geometry, {
+        concurrency: 2,
+        encodeChunk: pool.encodeChunk,
+        signal
+    });
+} finally {
+    pool.dispose();
+}
 ```
 
-See [website setup](apps/site/README.md) for GitHub Pages deployment. The Pages workflow deploys `apps/site/dist` from `main`; choose **GitHub Actions** as the Pages source in repository settings.
+Serve meshquilt/worker as a classic Worker and provide its served URL. Relative encoder URLs resolve from the Worker location. WASM defaults to the encoder script directory; wasmUrl overrides it. Draco binaries are supplied separately and licensed Apache-2.0. Keep the pool at2–4 Workers. Direct modules are not re-entrant; use concurrency1 without a pool.
 
-## Development
+## Failure, progress and memory
 
-Node.js 22.12+, 24+ or 26+, with pnpm 10.33.0.
+onProgress reports encode/decode stage, completedChunks and totalChunks, initially at0 and after every successful chunk. Progress is independent of AbortSignal cancellation; observer errors reject the operation. mapPool stops scheduling on failure and waits for active calls. A pool abort/dispose/runtime failure/timeout terminates all jobs. Default startup/per-job timeout is30 seconds, excluding queue time.
+
+Encoding creates chunks lazily, but source attributes, compressed results and final output still require model-sized memory. Splitting/validation run on the calling thread; this is not a streaming output API. Decoding copies compressed payloads by default. With copyChunks:false, keep the input alive and unchanged until decoding finishes.
+
+## Documentation
+
+- [Quick start](docs/quick-start.md)
+- [Geometry API](docs/geometry.md)
+- [Draco adapter](docs/draco.md)
+- [Browser Workers](docs/workers.md)
+- [Three.js example](docs/three.md)
+- [Quantization and seams](docs/quantization.md)
+- [MQLT container](docs/container-format.md)
+- [Runtime and memory](docs/runtime-and-memory.md)
+- [Migration from scoped packages](docs/migration.md)
+- [Local release preparation](docs/releasing.md)
+
+If the package has not yet been published to your registry, use the local workspace.
+
+## Website and development
+
+Node.js22.12+,24+ or26+ and pnpm10.33.0.
 
 ```bash
 pnpm install
+pnpm site
 pnpm check
 pnpm test
 pnpm test:packages
+pnpm test:release
+pnpm --filter meshquilt exec playwright install chromium
+pnpm test:workers
+pnpm site:test
 pnpm build
 ```
 
-`pnpm check` runs Prettier, ESLint, and the TypeScript project. See [CONTRIBUTING.md](CONTRIBUTING.md).
+The independent React website includes real geometry splitting, searchable docs, English/Chinese and light/dark themes. See [website setup](apps/site/README.md) for GitHub Pages. Choose GitHub Actions as the Pages source.
 
-Encoding generates chunks lazily, but still keeps the source geometry and complete compressed output. See [runtime, memory and cancellation](docs/runtime-and-memory.md) for ownership, Worker failure semantics and zero-copy decoding. TypeScript 7 runs builds; a parallel TypeScript 6 installation supplies the API required by the current ESLint parser.
+TypeScript7 runs builds/typechecks; TypeScript6 supplies the API needed by the current ESLint parser. Three.js minimum-version tests belong only to the private example. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). Draco has its own Apache-2.0 license.

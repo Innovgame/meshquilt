@@ -1,0 +1,46 @@
+{
+    "name": "meshquilt",
+    "version": "0.1.0",
+    "description": "Array-first chunked mesh codec with shared quantization, an MQLT container, and optional Draco workers.",
+    "type": "module",
+    "license": "MIT",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./draco": {
+            "types": "./dist/codecs/draco/index.d.ts",
+            "import": "./dist/codecs/draco/index.js"
+        },
+        "./worker": "./worker/encode.worker.js"
+    },
+    "keywords": [
+        "3d",
+        "mesh",
+        "compression",
+        "quantization",
+        "draco"
+    ],
+    "sideEffects": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "files": [
+        "dist",
+        "worker",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "node ../../node_modules/typescript-compiler/bin/tsc -p tsconfig.json && node scripts/build-worker.mjs",
+        "prepack": "pnpm build",
+        "test:browser": "node scripts/test-browser.mjs"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.64.0",
+        "@types/draco3d": "^1.4.10",
+        "draco3d": "1.5.7",
+        "esbuild": "^0.28.2"
+    }
+}

@@ -9,9 +9,8 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@meshquilt/core": "workspace:*",
-        "@meshquilt/three": "workspace:*",
-        "three": "^0.186.1"
+        "three": "^0.186.1",
+        "meshquilt": "workspace:*"
     },
     "devDependencies": {
         "@types/three": "^0.186.0",

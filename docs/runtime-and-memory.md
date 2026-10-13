@@ -4,19 +4,21 @@ MeshQuilt bounds the geometry passed to each encoder. This does not make the com
 
 ## Encoding working set
 
-The Three.js adapter reads the complete input attributes into independent buffers. The core measures shared quantization and validates the geometry before splitting. `encodeGeometry` then pulls chunks from a lazy iterator only when an encoder slot is available. Apart from splitter scratch space, no more than `concurrency` uncompressed chunks need to be in flight in the core pipeline.
+The core accepts geometry arrays directly, measures shared quantization and validates the geometry before splitting. `encodeGeometry` pulls chunks from a lazy iterator only when an encoder slot is available. Apart from splitter scratch space, no more than `concurrency` uncompressed chunks need to be in flight. Uint16/Uint32 indices are accepted; for nonindexed triangle soup, indices are created within each chunk. Copying Three.js input attributes belongs only to the integration example.
 
 The source arrays, each Worker WASM heap, accumulated compressed chunk bytes and the final MQLT buffer still require memory. Packing temporarily holds compressed payloads and the final output together. The API has no streaming output sink, and validation/conversion/splitting run on the calling thread. Do not describe this as a fixed total-memory or fully off-thread codec.
 
-`splitGeometry` materializes an array for compatibility. Use `iterateGeometry` for custom bounded pipelines. A single-chunk split returns the source geometry itself; multiple chunks have copied attributes. Do not mutate or detach the source during an encode operation.
+`splitGeometry` materializes an array. Use `iterateGeometry` for custom bounded pipelines. A single-chunk Uint32 input returns the source geometry itself. Small Uint16/nonindexed inputs normalize only their index and share attributes; multiple chunks copy attributes. Do not mutate or detach the source during encoding.
 
 ## Decode ownership
 
 `decodeContainer` and `decodeGeometry` copy compressed payloads by default. `{ copyChunks: false }` avoids those copies but retains views into the original container. Keep the container alive and unchanged until all decoders finish; a decoder must not transfer those shared views.
 
-Decoded output remains an array of independent geometry chunks. The Three adapter creates separate geometries but shares the source material. Dispose generated geometries when removing the result. Material lifetime remains the application's responsibility.
+Decoded output remains raw independent geometry chunks, with no materials or rendering objects. The private Three.js example creates separate geometries but shares the source material. Dispose generated example geometries when removing the result; material lifetime remains the application's responsibility.
 
 ## Failure and cancellation
+
+Both encodeGeometry and decodeGeometry accept onProgress, reporting stage, completedChunks and totalChunks initially and after successful chunks. Observer return values do not cancel work. If an observer throws, the operation rejects after in-flight jobs settle. Use AbortSignal for cancellation.
 
 `mapPool` accepts an iterable, preserves input order and stops requesting new items after the first task failure. It waits for already started calls to settle before rejecting with the first failure. This prevents callers from releasing shared resources while library-managed calls continue to run. It cannot interrupt an arbitrary user callback that never settles.
 
@@ -34,7 +36,7 @@ TypeScript 7 (`typescript-compiler`) runs builds and type checks. The newest typ
 pnpm check
 pnpm test
 pnpm test:packages
-pnpm --filter @meshquilt/draco exec playwright install chromium
+pnpm --filter meshquilt exec playwright install chromium
 pnpm test:workers
 pnpm site:test
 pnpm build

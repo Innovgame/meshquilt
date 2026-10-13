@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for improving MeshQuilt. The library splits a `THREE.Mesh` into chunks, compresses those chunks in the browser, and draws them back without opening quantization seams.
+Thanks for improving MeshQuilt. The array-first TypeScript library splits triangle geometry, compresses independent chunks, and keeps shared vertices on one quantization grid. Rendering integration belongs to private examples.
 
 ## Setup
 
@@ -18,20 +18,21 @@ pnpm demo
 pnpm check
 pnpm test
 pnpm test:packages
+pnpm test:release
 ```
 
 `pnpm check` runs Prettier, ESLint, and `tsc --noEmit`. Run `pnpm build` when you change package exports or the demo.
 
 Builds and type checks use TypeScript 7 through the `typescript-compiler` alias. Root `typescript` intentionally provides the 6.0 API needed by the current typescript-eslint. The `three-min` alias is pinned to 0.160.0 for compatibility tests; other direct dependencies track current stable versions. See [runtime notes](docs/runtime-and-memory.md).
 
-`pnpm test:packages` builds and packs all three libraries, installs them in a temporary consumer, and checks native ESM exports and NodeNext declarations. For changes to Draco or its Worker protocol, also run:
+`pnpm test:packages` builds and packs the single `meshquilt` library, installs it in a temporary consumer without Three.js, and checks root/Draco/Worker exports, native ESM imports and NodeNext declarations. For changes to Draco or its Worker protocol, also run:
 
 ```bash
-pnpm --filter @meshquilt/draco exec playwright install chromium
+pnpm --filter meshquilt exec playwright install chromium
 pnpm test:workers
 ```
 
-Edit `packages/draco/src/worker.ts` and the shared encoder source, then rebuild. The checked-in `worker/encode.worker.js` is generated; its source is linted and type checked. Keep its public export a classic Worker asset.
+Edit `packages/meshquilt/src/runtime/worker.ts` and the shared encoder source, then rebuild. The checked-in `worker/encode.worker.js` is generated; its source is linted and type checked. Keep its public export a classic Worker asset.
 
 ## Website development
 
@@ -53,7 +54,7 @@ Use a short English conventional commit, such as `fix:`, `feat:`, `docs:`, or `c
 Releases are cut from `main` with a `v*` tag. Do not keep a long-lived release branch.
 
 1. Move the `Unreleased` notes in [CHANGELOG.md](CHANGELOG.md) under the new version heading, for example `## 0.1.1`.
-2. Set the same version in the root `package.json` and in every publishable package under `packages/`.
+2. Set the same version in the root workspace `package.json` and in `packages/meshquilt/package.json`, the only publishable package.
 3. Commit those changes.
 4. Wait until CI passes for that commit.
 5. Tag and push the tag:
@@ -63,7 +64,7 @@ git tag v0.1.1
 git push origin v0.1.1
 ```
 
-Before the first publish, add a `repository` field to each publishable package. Package publish should reject a tag that does not match those package versions.
+Run `pnpm release:check vX.Y.Z` before tagging: it validates the exact package/workspace version, empty Unreleased section and the version's release notes. `examples/three` is private and is never published. See [local release preparation](docs/releasing.md) for packing, metadata and the manual dry-run-by-default release workflow. Keep real repository metadata unset until a remote is selected; GitHub release packaging derives it from the actual repository.
 
 ## Reporting issues
 

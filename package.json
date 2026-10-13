@@ -1,8 +1,8 @@
 {
-    "name": "meshquilt",
+    "name": "meshquilt-workspace",
     "private": true,
     "version": "0.1.0",
-    "description": "Chunked mesh codec for the browser. Split a THREE.Mesh, compress the pieces in parallel, and draw them back without seam cracks.",
+    "description": "Development workspace for the array-first MeshQuilt mesh codec and website.",
     "type": "module",
     "packageManager": "pnpm@10.33.0",
     "engines": {
@@ -10,9 +10,11 @@
     },
     "scripts": {
         "build": "pnpm -r --if-present build",
-        "build:lib": "pnpm --filter \"./packages/*\" -r build",
+        "build:lib": "pnpm --filter meshquilt build",
         "test:packages": "pnpm build:lib && node scripts/verify-packages.mjs",
-        "test:workers": "pnpm build:lib && pnpm --filter @meshquilt/draco test:browser",
+        "test:workers": "pnpm build:lib && pnpm --filter meshquilt test:browser",
+        "release:check": "node scripts/release-check.mjs",
+        "test:release": "node --test scripts/test/*.test.mjs",
         "site": "pnpm --filter @meshquilt/site dev",
         "site:build": "pnpm --filter @meshquilt/site build",
         "site:preview": "pnpm --filter @meshquilt/site preview",

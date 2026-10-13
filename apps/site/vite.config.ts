@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
         resolve: {
             alias: {
                 "@": fileURLToPath(new URL("./src", import.meta.url)),
-                "@meshquilt/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url))
+                meshquilt: fileURLToPath(new URL("../../packages/meshquilt/src/index.ts", import.meta.url))
             }
         },
         define: { __REPOSITORY_URL__: JSON.stringify(repoUrl) },
