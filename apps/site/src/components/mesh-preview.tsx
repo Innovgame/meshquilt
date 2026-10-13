@@ -4,6 +4,7 @@ import { useSite } from "@/lib/site-context";
 import { formatBytes, geometryBytes, triangleCount } from "@/lib/mesh-metrics";
 import { useMeshPlayground } from "@/lib/use-mesh-playground";
 import { MAX_NORMAL_BITS } from "@/lib/mesh-limits";
+import type { MeshDisplayMode } from "@/lib/mesh-display";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
 
@@ -15,6 +16,7 @@ export function MeshPreview() {
     const { source, model, settings, result, busy, progress, error } = playground;
     const fileInput = useRef<HTMLInputElement>(null);
     const [explode, setExplode] = useState(12);
+    const [displayMode, setDisplayMode] = useState<MeshDisplayMode>("chunks");
     const [wireframe, setWireframe] = useState(false);
     const [rotate, setRotate] = useState(false);
     const [fitVersion, setFitVersion] = useState(0);
@@ -101,7 +103,7 @@ export function MeshPreview() {
                     size="sm"
                     disabled={!!busy}
                     onClick={() => {
-                        setExplode(12);
+                        setExplode(displayMode === "whole" ? 0 : 12);
                         void playground.resetDemo();
                     }}
                 >
@@ -126,8 +128,9 @@ export function MeshPreview() {
                 >
                     {model && (
                         <MeshCanvas
-                            chunks={model.chunks}
-                            explode={explode}
+                            model={model}
+                            displayMode={displayMode}
+                            explode={displayMode === "whole" ? 0 : explode}
                             wireframe={wireframe}
                             rotate={rotate}
                             fitVersion={fitVersion}
@@ -147,13 +150,44 @@ export function MeshPreview() {
                     </span>
                 </div>
             </div>
+            <div className="preview-display-toolbar">
+                <div className="preview-display-toggle" role="group" aria-label={t("Mesh display", "网格显示")}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-pressed={displayMode === "chunks"}
+                        disabled={!model}
+                        onClick={() => setDisplayMode("chunks")}
+                    >
+                        {t("Chunks", "分块")}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-pressed={displayMode === "whole"}
+                        disabled={!model}
+                        onClick={() => {
+                            setExplode(0);
+                            setDisplayMode("whole");
+                        }}
+                    >
+                        {t("Whole mesh", "整体")}
+                    </Button>
+                </div>
+                <span className="preview-display-note">
+                    {displayMode === "whole"
+                        ? t("1 mesh · uniform material", "1 个网格 · 统一材质")
+                        : t("Chunk colors · stored geometry", "分块着色 · 保留几何")}
+                </span>
+            </div>
             <div className="preview-controls">
                 <label id="explode-label">
                     <Maximize2 size={14} />
                     {t("Separate chunks", "分离几何块")}
                 </label>
                 <Slider
-                    value={[explode]}
+                    value={[displayMode === "whole" ? 0 : explode]}
+                    disabled={displayMode === "whole"}
                     onValueChange={(value) => setExplode(value[0]!)}
                     min={0}
                     max={100}
@@ -161,7 +195,7 @@ export function MeshPreview() {
                     aria-labelledby="explode-label"
                     aria-label={t("Chunk separation", "分块间距")}
                 />
-                <span className="slider-value">{explode}%</span>
+                <span className="slider-value">{displayMode === "whole" ? 0 : explode}%</span>
             </div>
             <div className="preview-bottom">
                 <div className="preview-stats">

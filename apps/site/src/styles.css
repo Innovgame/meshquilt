@@ -647,6 +647,45 @@ h1 {
     padding: 16px 18px 13px;
     flex-wrap: wrap;
 }
+.preview-display-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 14px 18px 0;
+}
+.preview-display-toggle {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-soft);
+}
+.preview-display-toggle .button {
+    min-height: 36px;
+}
+.preview-display-toggle [aria-pressed="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px #172d4210;
+}
+.preview-display-note {
+    color: var(--muted);
+    font-size: var(--text-small);
+}
+.preview-controls .slider[data-disabled] {
+    opacity: 0.5;
+}
+.preview-controls .slider-thumb[data-disabled] {
+    cursor: default;
+}
+@media (pointer: coarse) {
+    .preview-display-toggle .button {
+        min-height: 44px;
+    }
+}
 .preview-controls .slider {
     flex: 1 1 120px;
     width: auto;

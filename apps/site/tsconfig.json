@@ -11,5 +11,5 @@
             "meshquilt/draco": ["../../packages/meshquilt/src/codecs/draco/index.ts"]
         }
     },
-    "include": ["src", "tests", "vite.config.ts", "playwright.config.ts"]
+    "include": ["src", "test", "tests", "vite.config.ts", "playwright.config.ts"]
 }

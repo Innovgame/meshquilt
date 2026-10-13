@@ -1,33 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { ChunkGeometry } from "meshquilt";
+import { createDisplayPieces } from "@/lib/mesh-display";
+import type { MeshDisplayMode } from "@/lib/mesh-display";
+import type { MeshModel } from "@/lib/mesh-model";
 import { useSite } from "@/lib/site-context";
-
-const colors = ["#8daedb", "#b3c9e6", "#ecaa88", "#6fae9c", "#5079b1", "#e5c5a9", "#93b8af", "#7a9bcc"];
 
 export default function MeshCanvas({
     explode,
     wireframe,
     rotate,
-    chunks,
+    model,
+    displayMode,
     fitVersion
 }: {
     explode: number;
     wireframe: boolean;
     rotate: boolean;
-    chunks: ChunkGeometry[];
+    model: MeshModel;
+    displayMode: MeshDisplayMode;
     fitVersion: number;
 }) {
     const { t } = useSite();
     const host = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<{
-        update: (explode: number, wireframe: boolean, rotate: boolean) => void;
+        update: (explode: number, wireframe: boolean, rotate: boolean, mode: MeshDisplayMode) => void;
         fit: () => void;
     } | null>(null);
-    const values = useRef({ explode, wireframe, rotate });
+    const values = useRef({ explode, wireframe, rotate, displayMode });
     const [unavailable, setUnavailable] = useState(false);
-    values.current = { explode, wireframe, rotate };
+    values.current = { explode, wireframe, rotate, displayMode };
 
     useEffect(() => {
         const element = host.current;
@@ -65,36 +67,16 @@ export default function MeshCanvas({
         fill.position.set(4, -1, -2);
         scene.add(fill);
 
-        const bounds = new THREE.Box3();
-        for (const chunk of chunks) {
-            const attribute = new THREE.BufferAttribute(chunk.position, 3);
-            bounds.union(new THREE.Box3().setFromBufferAttribute(attribute));
-        }
-        const center = bounds.getCenter(new THREE.Vector3());
-        const size = bounds.getSize(new THREE.Vector3());
-        const scale = 3.1 / (Math.max(size.x, size.y, size.z) || 1);
-        const pieces = chunks.map((chunk, index) => {
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute("position", new THREE.BufferAttribute(chunk.position, 3));
-            if (chunk.normal) geometry.setAttribute("normal", new THREE.BufferAttribute(chunk.normal.slice(), 3));
-            geometry.setIndex(new THREE.BufferAttribute(chunk.index, 1));
-            // Normalize only the GPU copy: export coordinates remain untouched.
-            geometry.setAttribute("position", new THREE.BufferAttribute(chunk.position.slice(), 3));
-            geometry.translate(-center.x, -center.y, -center.z);
-            geometry.scale(scale, scale, scale);
-            if (!chunk.normal) geometry.computeVertexNormals();
-            geometry.computeBoundingBox();
-            const direction = geometry.boundingBox!.getCenter(new THREE.Vector3()).normalize();
-            const material = new THREE.MeshStandardMaterial({
-                color: colors[index % colors.length],
-                roughness: 0.48,
-                metalness: 0.05,
-                side: THREE.DoubleSide
-            });
-            const mesh = new THREE.Mesh(geometry, material);
-            group.add(mesh);
-            return { mesh, direction, material };
-        });
+        let pieces: ReturnType<typeof createDisplayPieces> = [];
+        let activeMode: MeshDisplayMode | undefined;
+        const disposePieces = () => {
+            for (const { mesh, material } of pieces) {
+                group.remove(mesh);
+                mesh.geometry.dispose();
+                material.dispose();
+            }
+            pieces = [];
+        };
         let autoRotate = false;
         let visible = true;
         let frame = 0;
@@ -126,9 +108,21 @@ export default function MeshCanvas({
                 controls.update();
                 refresh();
             },
-            update(amount, wire, rotation) {
+            update(amount, wire, rotation, mode) {
+                if (activeMode !== mode) {
+                    disposePieces();
+                    pieces = createDisplayPieces(model, mode);
+                    for (const { mesh } of pieces) group.add(mesh);
+                    activeMode = mode;
+                    renderer.domElement.setAttribute(
+                        "aria-label",
+                        mode === "whole"
+                            ? "Interactive whole mesh / 可交互的整体网格"
+                            : "Interactive chunked model / 可交互的分块模型"
+                    );
+                }
                 for (const { mesh, direction, material } of pieces) {
-                    mesh.position.copy(direction).multiplyScalar((amount / 100) * 0.9);
+                    mesh.position.copy(direction).multiplyScalar(mode === "whole" ? 0 : (amount / 100) * 0.9);
                     material.wireframe = wire;
                 }
                 autoRotate = rotation;
@@ -159,7 +153,12 @@ export default function MeshCanvas({
         document.addEventListener("visibilitychange", refresh);
         motion.addEventListener("change", refresh);
         controls.addEventListener("change", draw);
-        sceneRef.current.update(values.current.explode, values.current.wireframe, values.current.rotate);
+        sceneRef.current.update(
+            values.current.explode,
+            values.current.wireframe,
+            values.current.rotate,
+            values.current.displayMode
+        );
 
         return () => {
             sceneRef.current = null;
@@ -170,16 +169,16 @@ export default function MeshCanvas({
             motion.removeEventListener("change", refresh);
             renderer.domElement.removeEventListener("webglcontextlost", contextLost);
             controls.dispose();
-            for (const { mesh, material } of pieces) {
-                mesh.geometry.dispose();
-                material.dispose();
-            }
+            disposePieces();
             renderer.dispose();
             renderer.domElement.remove();
         };
-    }, [chunks]);
+    }, [model]);
 
-    useEffect(() => sceneRef.current?.update(explode, wireframe, rotate), [explode, wireframe, rotate]);
+    useEffect(
+        () => sceneRef.current?.update(explode, wireframe, rotate, displayMode),
+        [explode, wireframe, rotate, displayMode]
+    );
     useEffect(() => sceneRef.current?.fit(), [fitVersion]);
 
     return (

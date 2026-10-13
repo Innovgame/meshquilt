@@ -27,6 +27,8 @@ Choose triangles per chunk and position precision; normal/UV precision lives in 
 
 Parsing, splitting, and decoding run in a cancellable site Worker; encoding uses the library's classic Worker without detaching preview inputs. The playground caps imports at 100 MiB, two million triangles, six million vertices, and 1,000 preview chunks. Failed imports retain the last model. WebGL failure has a readable fallback. Automatic rotation is opt-in, respects reduced motion, and pauses when the preview is outside the viewport or the tab is hidden.
 
+Use **Chunks / Whole mesh** to inspect either independently colored chunks or one merged Mesh with a uniform preview material. Whole mode sets separation to zero and disables its slider; returning to chunks starts at zero separation. Mode switches preserve the camera and remain available for imported MQLT and original/decoded comparison. Stored chunk statistics and encoding settings remain independent of the display mode. The whole Mesh uses the already merged geometry, preserves UVs and existing normals, and keeps duplicate seam vertices without welding. Missing normals are computed on the displayed geometry only; this does not reconstruct cross-chunk vertex sharing or guarantee smooth shading across every boundary. Textures are not displayed by the uniform preview material.
+
 ## GitHub Pages
 
 1. Push this repository to GitHub with a `main` branch.
