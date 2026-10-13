@@ -1,22 +1,23 @@
-# MeshQuilt
+<h1 align="center">MeshQuilt</h1>
+<h3 align="center">
+  大型网格。同一套量化网格。<br />
+  面向原始几何数组的 TypeScript 网格编解码库
+</h3>
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+<p align="center">
+  <a href="README.md">English</a>
+  ·
+  <a href="README.zh-CN.md">简体中文</a>
+</p>
 
-面向原始几何数组的 TypeScript 网格编解码库：将三角网格分块、并行压缩，解码后的块共享量化网格，避免边界裂缝。
+<p align="center">
+  <a href="https://www.npmjs.com/package/meshquilt"><img alt="npm" src="https://img.shields.io/npm/v/meshquilt?color=CB3837&label=npm"></a>
+  <a href="https://github.com/Innovgame/meshquilt/releases"><img alt="version" src="https://img.shields.io/github/v/release/Innovgame/meshquilt?color=0368FF&label=version"></a>
+  <a href="https://github.com/Innovgame/meshquilt/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Innovgame/meshquilt/ci.yml?branch=main&label=ci"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/Innovgame/meshquilt?color=FF2B6E"></a>
+</p>
 
-版本 0.2.0，见 [CHANGELOG.md](CHANGELOG.md)。单包重构没有改变 MQLT 格式与量化默认值。
-
-## 一个发布包，三个入口
-
-| 导入入口         | 职责                                                              |
-| ---------------- | ----------------------------------------------------------------- |
-| meshquilt        | 几何类型、惰性分块、数组合并、共享量化、MQLT 容器和编解码流水线。 |
-| meshquilt/draco  | 可注入的 Draco 编解码适配器及浏览器 Worker 池。                   |
-| meshquilt/worker | 由应用部署的经典 Worker 文件。                                    |
-
-发布包没有运行时依赖或 peer dependency。Three.js 接入代码位于私有 [examples/three](examples/three/README.md) 示例，不再独立发布。根工作区与官网也不发布。
-
-## 快速开始
+<a href="https://innovgame.github.io/meshquilt/"><img alt="MeshQuilt 官网的实时几何预览" src="docs/images/live-geometry.png"></a>
 
 ```bash
 npm install meshquilt
@@ -24,7 +25,33 @@ npm install meshquilt
 
 同一版本也会发布到 GitHub Packages，包名是 `@innovgame/meshquilt`。
 
-若包尚未发布到你的注册源，请使用本地 pnpm 工作区。
+## 目录
+
+1. [为什么用 MeshQuilt](#为什么用-meshquilt)
+2. [入口](#入口)
+3. [官网](#官网)
+4. [文档](#文档)
+5. [许可](#许可)
+6. [参与贡献](#参与贡献)
+
+## 为什么用 MeshQuilt
+
+- **所有分块共用一套网格。** 位置和 UV 按同一体积量化，复制到分块边界的顶点仍落在同一网格上。
+- **面向数组。** 输入和输出都是类型化数组。根入口没有运行时依赖，也不会加载 Draco、Three.js 或 Worker。
+- **分块独立压缩。** 注入自己的 Draco 编码器，或把整条流水线放进 Worker。Draco 二进制由应用提供。
+- **容器格式明确。** 编码结果打包为 MQLT。解码返回独立分块，交给你自己的渲染器。
+
+## 入口
+
+| 导入入口           | 职责                                                    |
+| ------------------ | ------------------------------------------------------- |
+| `meshquilt`        | 几何、分块、共享量化、合并，以及 MQLT 容器。           |
+| `meshquilt/draco`  | 可注入的 Draco 适配器和浏览器 Worker 池。               |
+| `meshquilt/worker` | 经典 Worker 文件，由应用自行部署。                      |
+
+没有发布 Three.js 适配器。材质、变换和模型加载属于应用。测试过的接入代码在 [`examples/three`](examples/three/README.md)。
+
+### 编码与解码
 
 ```ts
 import { encodeGeometry, decodeGeometry } from "meshquilt";
@@ -34,62 +61,85 @@ const geometry = {
     position: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
     index: new Uint16Array([0, 1, 2])
 };
-// 自行加载 Draco 构建，先初始化 encoderModule 与 decoderModule。
+
+// 先自行加载并初始化 Draco 模块。
 const bytes = await encodeGeometry(geometry, {
     maxTriangles: 100_000,
     encodeChunk: createDracoChunkEncoder(encoderModule)
 });
-const { chunks } = await decodeGeometry(bytes, (payload) => decodeDracoChunk(decoderModule, payload));
+const decoded = await decodeGeometry(bytes, (payload) => decodeDracoChunk(decoderModule, payload));
 ```
 
-输入支持 Uint16/Uint32 索引；省略索引表示逐三个顶点组成三角形。可选法线和 UV 为逐顶点属性；编码器输入与解码结果统一使用 Uint32 索引。文件加载、材质、变换及绘制由应用负责，平滑法线应在完整网格上预计算。默认位置14位、法线8位、UV10位，0表示禁用该属性量化。
+支持 Uint16、Uint32 和无索引三角汤。见[快速上手](docs/zh/quick-start.md)。
 
-并行编码使用2–4个 Worker，concurrency 与池大小匹配。单个 Draco 模块不可重入。应用自行提供编码脚本与匹配的 WASM。onProgress 提供阶段、已完成块数与总块数；取消使用 AbortSignal。
-
-## 合并解码后的分块
+### 合并分块
 
 ```ts
 import { mergeGeometry } from "meshquilt";
 
-const geometry = mergeGeometry(chunks);
+const geometry = mergeGeometry(decoded.chunks);
 ```
 
-合并是可选步骤，输出独立缓冲区和 Uint32 索引，保留接缝重复顶点、法线与 UV，不焊接、不再次量化。每种可选属性必须在所有输入中都存在或都不存在，混合缺失会报错。创建 Mesh、材质与预览容量限制由应用负责。见[几何 API](docs/zh/geometry.md#合并几何)。
+合并是可选步骤。它保留接缝顶点，不焊接，也不再次量化。见[几何 API](docs/zh/geometry.md#合并几何)。
 
-## 文档与官网
+### Worker
 
-[快速上手](docs/quick-start.md)、[几何 API](docs/geometry.md)、[Draco](docs/draco.md)、[Worker](docs/workers.md)、[Three.js 示例](docs/three.md)、[量化与接缝](docs/quantization.md)、[容器格式](docs/container-format.md)、[运行时与内存](docs/runtime-and-memory.md)、[迁移说明](docs/migration.md)。
+```ts
+import { createDracoWorkerPool } from "meshquilt/draco";
+
+const pool = await createDracoWorkerPool({
+    workerUrl,
+    encoderScriptUrl: "/draco/draco_encoder.js",
+    size: 2
+});
+```
+
+把 `meshquilt/worker` 作为经典 Worker 提供。池大小保持在 2–4。见 [Worker](docs/zh/workers.md)。
+
+## 官网
+
+[项目官网](https://innovgame.github.io/meshquilt/)可以查看真实分块，导入 STL、OBJ、GLB 和 MQLT，并搜索中英文文档。
 
 ```bash
 pnpm install
 pnpm site
-pnpm site:build
-pnpm site:preview
 ```
 
-官网包含真实几何交互、文档搜索、中英文切换和明暗主题。部署说明见 [apps/site/README.md](apps/site/README.md)，Pages Source 选择 GitHub Actions。
+Pages 部署见 [apps/site/README.md](apps/site/README.md)。
 
-## 开发
+## 文档
 
-Node.js22.12+、24+或26+，pnpm10.33.0。
+- [快速上手](docs/zh/quick-start.md)
+- [几何 API](docs/zh/geometry.md)
+- [Draco](docs/zh/draco.md)
+- [Worker](docs/zh/workers.md)
+- [Three.js 示例](docs/zh/three.md)
+- [量化与接缝](docs/zh/quantization.md)
+- [MQLT 容器](docs/zh/container-format.md)
+- [运行时与内存](docs/zh/runtime-and-memory.md)
+- [迁移](docs/zh/migration.md)
+- [性能](docs/zh/performance.md)
+- [更新日志](docs/zh/changelog.md)
+
+## 许可
+
+- MeshQuilt 使用 [MIT](LICENSE)。
+- Draco 二进制由应用自行提供，许可证仍是 Apache-2.0。
+
+## 参与贡献
+
+欢迎提 Issue 和 Pull Request。开始前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。漏洞请按 [SECURITY.md](SECURITY.md) 报告。
+
+需要 Node.js 22.12+、24+ 或 26+，以及 pnpm 10.33.0。
 
 ```bash
+pnpm install
 pnpm check
 pnpm test
 pnpm test:packages
 pnpm test:release
-pnpm --filter meshquilt exec playwright install chromium
-pnpm test:workers
-pnpm site:test
-pnpm build
 ```
 
-TypeScript7用于构建和类型检查，TypeScript6为当前 ESLint 提供兼容 API。最低版本 Three 测试夹具仅属于私有示例。见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+---
 
-本地发布准备见 [releasing.md](docs/releasing.md)。pnpm release:check vX.Y.Z 校验版本、标签与更新记录。GitHub 发布工作流默认仅检查并生成安装包；尚未配置远程或 npm 发布，本地包元数据不填写虚构仓库地址。
-
-性能基准统一使用 pnpm bench（TypeScript Vitest）与 pnpm bench:browser（Playwright），共享夹具，不维护独立 mjs runner。百万面模型的整体 Worker、所有权与本机量化结果见[性能说明](docs/zh/performance.md)。
-
-## 许可
-
-MIT，见 [LICENSE](LICENSE)。Draco 二进制使用 Apache-2.0。
+MeshQuilt © 2026 MeshQuilt contributors

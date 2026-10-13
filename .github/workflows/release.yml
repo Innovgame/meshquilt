@@ -24,7 +24,7 @@ jobs:
         outputs:
             npm_tag: ${{ steps.metadata.outputs.npm_tag }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
               with:
                   fetch-depth: 0
             - name: Validate tag and select release commit
