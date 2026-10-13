@@ -1,26 +1,7 @@
 # Examples
 
-The browser demo is `apps/demo`. From the repository root:
+- [Three.js integration](three/README.md): tested helpers for mesh conversion, transforms and resource ownership. Copy the source into your application; it is not a published adapter.
+- [Array-first quick start](../docs/quick-start.md): prepare typed arrays, initialize Draco and encode/decode chunks.
+- [Browser Workers](../docs/workers.md): deploy the Worker asset and choose whole-pipeline or pooled encoding.
 
-```bash
-pnpm demo
-```
-
-It builds a terrain `THREE.Mesh`, splits it, and colors each chunk. The stats compare a shared quantization volume with a volume computed per chunk.
-
-A minimal encode and decode looks like this:
-
-```ts
-import { decodeMesh, encodeMesh } from "./three/integration";
-import { createDracoChunkEncoder, decodeDracoChunk } from "meshquilt/draco";
-
-const encoderModule = await DracoEncoderModule({});
-const buffer = await encodeMesh(mesh, {
-    maxTriangles: 100_000,
-    encodeChunk: createDracoChunkEncoder(encoderModule)
-});
-
-const group = await decodeMesh(buffer, (bytes) => decodeDracoChunk(decoderModule, bytes), mesh);
-```
-
-`createDracoChunkEncoder` is not safe to call concurrently on one module. Use `createDracoWorkerPool` when more than one chunk should encode at the same time. Keep the pool size at 2 to 4.
+Run `pnpm site` for the interactive geometry preview and documentation. Run `pnpm test:workers` for actual browser Draco encoding and `pnpm bench:browser` for reproducible performance measurements.

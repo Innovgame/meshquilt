@@ -47,3 +47,7 @@ splitGeometry 返回数组，iterateGeometry 惰性产出块。编码仅在并�
 onProgress 初始报告0，再在每个块成功后报告递增完成数，stage 为 encode/decode。回调抛错会拒绝操作，并等待在途调用结束；取消使用独立的 AbortSignal。
 
 源数据、Worker 堆、压缩结果与最终输出仍占用与模型大小相关的内存。当前没有流式输出。见[运行时与内存](runtime-and-memory.md)、[量化](quantization.md)和[容器格式](container-format.md)。
+
+## 兼容辅助 API
+
+共享范围计算使用 computeSharedQuantization。旧名称 quantizationOf 保留为已弃用别名。quantizeComponent 同样标记弃用，它只是 float64 概念辅助函数，不是 Draco 的 float32 量化器。现有调用行为保持兼容；判断编码坐标和接缝时使用实际编解码器输出。

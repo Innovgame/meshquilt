@@ -52,7 +52,7 @@ jobs:
             - name: Verify browser Workers
               run: |
                   pnpm --filter meshquilt exec playwright install --with-deps chromium
-                  pnpm test:workers
+                  pnpm test:workers:built
             - name: Validate version and prepare actual repository metadata
               id: metadata
               env:
@@ -61,7 +61,7 @@ jobs:
             - name: Pack the validated library
               run: |
                   mkdir -p release-artifact
-                  pnpm --filter meshquilt pack --pack-destination "$GITHUB_WORKSPACE/release-artifact"
+                  pnpm --filter meshquilt --config.ignore-scripts=true pack --pack-destination "$GITHUB_WORKSPACE/release-artifact"
             - uses: actions/upload-artifact@v4
               with:
                   name: npm-package

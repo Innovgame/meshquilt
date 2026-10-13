@@ -29,7 +29,7 @@ pnpm bench:browser
 pnpm test:workers
 ```
 
-Node 基准使用现有 Vitest 配置和 TypeScript bench 文件，Vitest 管理预热、采样、比较表和 JSON 结果。浏览器基准进入现有 Playwright 项目，并与 Worker 集成验证共享 TypeScript 夹具；没有独立 benchmark mjs runner 或第二套 HTTP 服务。
+Node 基准使用现有 Vitest 配置和 TypeScript bench 文件，Vitest 管理预热、采样、比较表和 JSON 结果。浏览器基准使用 packages/meshquilt/playwright.config.ts，并与 Worker 集成验证共享 TypeScript 夹具。夹具直接提供页面、Worker 和 WASM 响应，无需构建网站或启动 HTTP 服务；没有独立 benchmark mjs runner。
 
 Vitest 结果位于 .tmp/performance/vitest/current。将 MESHQUILT_BENCH_DIST 指向旧版本编译目录后运行 pnpm bench，会生成 baseline；清除变量再运行，自动用 bench.from 比较。每阶段至少5次采样，浏览器每场景3次。正常 CI 不设置依赖硬件的耗时阈值。
 

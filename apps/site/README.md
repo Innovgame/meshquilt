@@ -1,6 +1,6 @@
 # MeshQuilt website
 
-The independent project website for GitHub Pages. Built with React 19, Vite 8, Tailwind CSS 4, shadcn-style Radix components, Lucide, and Three.js. No demo code or demo assets are used.
+The independent project website for GitHub Pages. Built with React 19, Vite 8, Tailwind CSS 4, shadcn-style Radix components, Lucide, and Three.js.
 
 ## Development
 
@@ -59,3 +59,5 @@ pnpm site:test
 ```
 
 Check the homepage and docs at desktop and mobile widths, language/theme switches, search (`Ctrl/Cmd+K`), code copying, keyboard navigation, and a production build under the repository subpath before shipping.
+
+This Playwright configuration covers the website only. Library Worker tests and browser benchmarks use `packages/meshquilt/playwright.config.ts` and intercepted assets, with no website server dependency.

@@ -70,3 +70,7 @@ Results are independent geometry chunks. No rendering objects or materials are c
 The source mesh, Worker WASM heaps, compressed results and final MQLT buffer still occupy model-sized memory. Validation and splitting run on the calling thread; this API does not provide streaming file output. See [runtime and memory](runtime-and-memory.md).
 
 See [quantization](quantization.md) and the [container format](container-format.md).
+
+## Compatibility helpers
+
+Use `computeSharedQuantization` to calculate shared volumes. The older `quantizationOf` name remains available as a deprecated alias. `quantizeComponent` is also deprecated: it is an illustrative float64 helper, not Draco's float32 quantizer. Existing calls keep their behavior; use real codec output when checking encoded coordinates and seams.

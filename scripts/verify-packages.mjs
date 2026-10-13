@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const pnpmCli = process.env.npm_execpath;
 if (!pnpmCli) throw new Error("Run through pnpm test:packages.");
+const skipBuild = process.argv.includes("--skip-build");
 const consumer = await mkdtemp(join(tmpdir(), "meshquilt-package-check-"));
 const run = (args, cwd = root) => execFileSync(process.execPath, args, { cwd, stdio: "pipe" });
 try {
@@ -20,7 +21,10 @@ try {
     assert.deepEqual(Object.keys(metadata.exports), [".", "./draco", "./worker"]);
     assert.equal(metadata.dependencies, undefined, "root package has no runtime dependencies");
     assert.equal(metadata.peerDependencies, undefined, "Three.js must not be a published peer dependency");
-    run([pnpmCli, "pack", "--pack-destination", consumer], folder);
+    run(
+        [pnpmCli, ...(skipBuild ? ["--config.ignore-scripts=true"] : []), "pack", "--pack-destination", consumer],
+        folder
+    );
     const archive = join(consumer, `meshquilt-${metadata.version}.tgz`);
     await writeFile(
         join(consumer, "package.json"),
@@ -39,11 +43,13 @@ try {
         `
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
-import { encodeGeometry, decodeGeometry, splitGeometry } from "meshquilt";
+import { encodeGeometry, decodeGeometry, splitGeometry, quantizationOf, quantizeComponent } from "meshquilt";
 import { createDracoChunkEncoder, createDracoWorkerPool, encodeDracoInWorker } from "meshquilt/draco";
 const geometry = { position: new Float32Array([0,0,0,1,0,0,0,1,0]) };
 const chunks = splitGeometry(geometry, 1);
 assert.deepEqual(chunks[0].index, new Uint32Array([0,1,2]));
+assert.deepEqual(quantizationOf(geometry).position, { origin: [0,0,0], range: 1 });
+assert.equal(quantizeComponent(0.5, 0, 1, 8), 128 / 255);
 const bytes = await encodeGeometry(geometry, { encodeChunk: () => new Uint8Array([7]) });
 const decoded = await decodeGeometry(bytes, () => chunks[0]);
 assert.equal(decoded.chunks.length, 1);
@@ -62,7 +68,7 @@ console.log("Packed meshquilt: root/draco/worker exports, triangle soup, no Thre
     await writeFile(
         join(consumer, "check.ts"),
         `
-import { encodeGeometry, decodeGeometry } from "meshquilt";
+import { encodeGeometry, decodeGeometry, quantizationOf, quantizeComponent } from "meshquilt";
 import type { GeometryInput, GeometryProgress, EncodeGeometryOptions, DecodeGeometryOptions, QuantBits } from "meshquilt";
 import type { DracoWorkerPoolOptions, DracoGeometryWorkerOptions } from "meshquilt/draco";
 const geometry: GeometryInput = { position: new Float32Array(9), index: new Uint16Array([0,1,2]) };
@@ -72,7 +78,7 @@ const encode: EncodeGeometryOptions = { ...quant, encodeChunk: () => new Uint8Ar
 const decode: DecodeGeometryOptions = { copyChunks: false, onProgress: progress };
 const worker: DracoWorkerPoolOptions = { workerUrl: "worker.js", encoderScriptUrl: "encoder.js" };
 const wholeWorker: DracoGeometryWorkerOptions = { ...worker, transferInput: true };
-void [geometry, encode, decode, worker, wholeWorker, encodeGeometry, decodeGeometry];
+void [geometry, encode, decode, worker, wholeWorker, encodeGeometry, decodeGeometry, quantizationOf, quantizeComponent];
 `
     );
     run(

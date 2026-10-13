@@ -35,3 +35,5 @@ Encoding rejects multi-material, skinned, instanced and morph-target meshes befo
 Dispose each child geometry when removing the decoded group. Its material belongs to the caller and may still be used by the source or other meshes; do not dispose it just because a chunk is removed. The adapter copies source attribute buffers before encoding and does not transfer the original Three.js arrays.
 
 `EncodeMeshOptions` shares the core encode options, including `signal`. `decodeMesh(buffer, decodeChunk, source, concurrency, options)` accepts `copyChunks` and `signal` in the final options argument.
+
+`meshToGeometry` validates its returned arrays. `encodeMesh` converts once and lets the core encoder validate numeric geometry while preparing shared quantization, avoiding another full scan. Numeric geometry errors reject its Promise; unsupported mesh kinds, materials and attributes are rejected synchronously during conversion.

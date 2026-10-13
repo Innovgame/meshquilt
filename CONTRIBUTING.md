@@ -9,7 +9,7 @@ Thanks for improving MeshQuilt. The array-first TypeScript library splits triang
 
 ```bash
 pnpm install
-pnpm demo
+pnpm site
 ```
 
 ## Checks before a pull request
@@ -21,7 +21,7 @@ pnpm test:packages
 pnpm test:release
 ```
 
-`pnpm check` runs Prettier, ESLint, and `tsc --noEmit`. Run `pnpm build` when you change package exports or the demo.
+`pnpm check` runs Prettier, ESLint, and `tsc --noEmit`. Run `pnpm build` when you change package exports or the website.
 
 Builds and type checks use TypeScript 7 through the `typescript-compiler` alias. Root `typescript` intentionally provides the 6.0 API needed by the current typescript-eslint. The `three-min` alias is pinned to 0.160.0 for compatibility tests; other direct dependencies track current stable versions. See [runtime notes](docs/runtime-and-memory.md).
 
@@ -31,6 +31,10 @@ Builds and type checks use TypeScript 7 through the `typescript-compiler` alias.
 pnpm --filter meshquilt exec playwright install chromium
 pnpm test:workers
 ```
+
+The library's Playwright configuration is `packages/meshquilt/playwright.config.ts`. Its shared fixture fulfills browser, Worker and WASM requests directly; it needs no website build or HTTP server. The website keeps its own Pages/subpath configuration.
+
+CI runs `pnpm build` once, then `pnpm test:packages:built` and `pnpm test:workers:built` reuse those artifacts. Use these commands only after building the current source; normal `test:packages` and `test:workers` prepare their own artifacts. `prepack` still builds for regular package consumers.
 
 Edit `packages/meshquilt/src/runtime/worker.ts` and the shared encoder source, then rebuild. The checked-in `worker/encode.worker.js` is generated; its source is linted and type checked. Keep its public export a classic Worker asset.
 

@@ -51,7 +51,7 @@ jobs:
               run: pnpm build
 
             - name: Verify packed exports and declarations
-              run: pnpm test:packages
+              run: pnpm test:packages:built
 
             - name: Install browser for Worker integration
               if: matrix.node == 22
@@ -59,4 +59,4 @@ jobs:
 
             - name: Verify real Draco Workers
               if: matrix.node == 22
-              run: pnpm test:workers
+              run: pnpm test:workers:built

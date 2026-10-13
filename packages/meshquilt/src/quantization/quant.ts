@@ -12,23 +12,6 @@ export interface QuantBits {
     uvBits?: number;
 }
 
-/**
- * Snap one component onto the Draco grid.
- * Draco uses `floor((value - origin) / range * maxQ + 0.5)` in float32.
- * This helper is float64 and exists so tests can show that a shared volume
- * keeps identical inputs identical. The encoder still does the real snap.
- */
-export function quantizeComponent(value: number, origin: number, range: number, bits: number): number {
-    assertBits("bits", bits);
-    if (bits <= 0) return value;
-    const maxQ = (1 << bits) - 1;
-    const safeRange = range === 0 ? 1 : range;
-    let q = Math.floor((value - origin) * (maxQ / safeRange) + 0.5);
-    if (q < 0) q = 0;
-    if (q > maxQ) q = maxQ;
-    return origin + q * (safeRange / maxQ);
-}
-
 export function computeVolume(values: Float32Array, stride: number): QuantVolume {
     if (!Number.isInteger(stride) || stride < 1) throw new MeshQuiltError("stride must be an integer >= 1");
     if (values.length % stride !== 0) {

@@ -22,3 +22,7 @@ meshToGeometry 读取属性，chunkToGeometry创建 BufferGeometry，chunksToGro
 ## 资源生命周期
 
 移除结果时释放生成的各块几何；材质与源网格共享，生命周期由应用管理。此例复制属性，不转移Three.js源数组。几何块保持独立，不重新焊接。
+
+## 校验与错误
+
+meshToGeometry 会完整校验返回数组。encodeMesh 只转换一次，由核心编码入口在准备共享量化时校验几何，避免额外扫描。数值几何错误通过 Promise 拒绝；不支持的网格类型、材质和属性在转换阶段同步抛出。

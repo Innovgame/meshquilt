@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- 移除重复 demo 应用，Three.js 完整说明统一到中英文文档。库浏览器测试无需网站服务器，CI 复用已构建产物。旧量化辅助 API 移入兼容模块并标记弃用，保持现有调用可用。
 - 新增标准 TypeScript Vitest 性能基准与 Playwright Worker/响应性测量，共享夹具并移除独立 Worker 集成脚本。
 - 优化无索引分块、索引映射、属性复制和重复校验，Draco 解码采用可选批量 API 与兼容回退。
 - 新增整体 encodeDracoInWorker，支持显式所有权转移、类型化进度和取消。

@@ -1,5 +1,5 @@
 import { encodeContainer, decodeContainer, type DecodeContainerOptions } from "./container/container.js";
-import { computeSharedQuantization, DEFAULT_MAX_TRIANGLES, type QuantBits } from "./quantization/quant.js";
+import { DEFAULT_MAX_TRIANGLES, type QuantBits } from "./quantization/quant.js";
 import { iterateValidatedGeometry } from "./geometry/split.js";
 import { prepareGeometry } from "./geometry/prepare.js";
 import {
@@ -10,8 +10,7 @@ import {
     type GeometryInput,
     type GeometryProgress,
     type QuantVolume,
-    type QuiltHeader,
-    type SharedQuantization
+    type QuiltHeader
 } from "./types.js";
 
 export interface EncodeGeometryOptions extends QuantBits {
@@ -133,8 +132,4 @@ export async function mapPool<T, R>(
     }
     if (options.signal?.aborted) throw new MeshQuiltError("operation aborted");
     return results;
-}
-
-export function quantizationOf(geometry: GeometryInput, bits?: QuantBits): SharedQuantization {
-    return computeSharedQuantization(geometry, bits);
 }

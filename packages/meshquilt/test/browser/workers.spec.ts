@@ -4,6 +4,21 @@ import { decodeDracoChunk } from "meshquilt/draco";
 import type { DracoDecoderModule } from "meshquilt/draco";
 import { test, expect } from "./fixtures";
 
+test("library browser checks run on intercepted assets without a website server", async ({ page }) => {
+    // Only the fixture's synthetic origin is allowed; no Vite preview is involved.
+    expect(new URL(page.url()).hostname).toBe("meshquilt.test");
+    const result = await page.evaluate(async () => {
+        const { grid, encodeDracoInWorker } = window.meshquilt;
+        const prefix = new URL("./", window.location.href).href;
+        const bytes = await encodeDracoInWorker(grid(1), {
+            workerUrl: `${prefix}worker.js`,
+            encoderScriptUrl: `${prefix}draco_encoder.js`
+        });
+        return Array.from(bytes.subarray(0, 4));
+    });
+    expect(result).toEqual([77, 81, 76, 84]);
+});
+
 test("pooled and whole-pipeline Workers preserve bytes, seams, progress and buffer ownership", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));

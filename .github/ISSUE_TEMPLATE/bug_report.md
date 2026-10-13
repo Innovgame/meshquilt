@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Encoding, decoding, seams, or the demo does not match the expected result
+about: Encoding, decoding, seams, or the website does not match the expected result
 title: ""
 labels: bug
 ---
