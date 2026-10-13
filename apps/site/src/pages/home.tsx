@@ -17,12 +17,15 @@ import {
 import { useEffect, useState } from "react";
 import { Github } from "@/components/github-icon";
 import { githubUrl, version } from "@/lib/config";
-import { encodeExample, workerExample } from "@/lib/docs";
+import { encodeExample, workerExample, wholeWorkerExample } from "@/lib/docs";
 import { useSite } from "@/lib/site-context";
 import { CodeBlock } from "@/components/code-block";
 import { MeshPreview } from "@/components/mesh-preview";
+import { ExecutionGuide } from "@/components/execution-guide";
+import { PerformanceOverview } from "@/components/performance-overview";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import "./home.css";
 
 function GridDiagram({ shared }: { shared: boolean }) {
     return (
@@ -113,18 +116,18 @@ export function Home({ section }: { section?: string }) {
                     <a href="#/changelog" className="release-badge">
                         <span className="release-dot" />v{version}
                         <span className="badge-divider" />
-                        {t("Small pieces. Big potential.", "小块网格，更多可能。")}
+                        {t("Array-first TypeScript", "面向数组的 TypeScript 库")}
                         <ArrowUpRight size={13} />
                     </a>
                     <h1>
-                        {t("One mesh.", "一个网格。")}
+                        {t("Millions of triangles.", "百万三角面。")}
                         <br />
-                        {t("Many possibilities.", "无限可能。")}
+                        {t("One shared grid.", "同一量化网格。")}
                     </h1>
                     <p className="hero-description">
                         {t(
-                            "A modular mesh codec for the browser. Split your geometry, compress in parallel, and bring it back together without the cracks.",
-                            "面向浏览器的模块化网格编解码库。拆分几何、并行压缩，再将各块无缝呈现。"
+                            "Encode triangle meshes in independent chunks. Keep shared vertices on one quantization grid, and move the full Draco pipeline off the main thread.",
+                            "将三角网格编码为独立分块，让共享顶点保持在同一量化网格上，并将完整 Draco 流水线移出主线程。"
                         )}
                     </p>
                     <div className="hero-buttons">
@@ -145,8 +148,12 @@ export function Home({ section }: { section?: string }) {
                         <ShieldCheck size={14} />
                         <span>{t("MIT licensed", "MIT 许可证")}</span>
                         <span className="note-dot" />
-                        <span>{t("Built for the browser", "为浏览器而生")}</span>
+                        <span>{t("Zero runtime dependencies", "无运行时依赖")}</span>
                     </div>
+                    <a className="text-link hero-runtime-link" href="#/execution">
+                        {t("Compare execution modes", "比较执行模式")}
+                        <ArrowRight size={15} />
+                    </a>
                 </div>
                 <div className="hero-visual" id="playground">
                     <MeshPreview />
@@ -166,8 +173,8 @@ export function Home({ section }: { section?: string }) {
                     <strong>TypeScript</strong>
                 </div>
                 <div>
-                    <Box size={21} />
-                    <strong>Three.js</strong>
+                    <Layers3 size={21} />
+                    <strong>{t("Typed arrays", "类型化数组")}</strong>
                 </div>
                 <div>
                     <Boxes size={22} />
@@ -247,25 +254,19 @@ export function Home({ section }: { section?: string }) {
                                 <span className="feature-icon blue">
                                     <Cpu size={20} />
                                 </span>
-                                <span className="technical-badge">2–4 WORKERS</span>
+                                <span className="technical-badge">1 WORKER / 1 HEAP</span>
                             </div>
-                            <h3>{t("Parallel, with a purpose.", "有边界地并行。")}</h3>
+                            <h3>{t("Move the whole pipeline.", "移出完整流水线。")}</h3>
                             <p>
                                 {t(
-                                    "A worker pool gives each encoder its own Draco module and WASM heap. Work on chunks without feeding the encoder the entire vertex buffer.",
-                                    "每个 Worker 持有独立的 Draco 模块和 WASM 堆，以块为单位编码，无需把完整顶点缓冲区交给编码器。"
+                                    "Validation, shared bounds, splitting and encoding run in one dedicated Worker. Transfer input ownership when you can to avoid copying the entire model.",
+                                    "校验、共享范围、分块和编码在一个专用 Worker 内完成。可以放弃输入所有权时，转移缓冲区以避免复制完整模型。"
                                 )}
                             </p>
-                            <div className="worker-lanes" aria-hidden="true">
-                                {[0, 1, 2].map((lane) => (
-                                    <div key={lane}>
-                                        <span>worker {lane + 1}</span>
-                                        {[0, 1, 2, 3].map((piece) => (
-                                            <i key={piece} style={{ opacity: 1 - piece * 0.15 }} />
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
+                            <a className="text-link" href="#/execution">
+                                {t("Choose an execution mode", "选择执行模式")}
+                                <ArrowRight size={15} />
+                            </a>
                         </article>
                         <article className="feature-small">
                             <div className="feature-title">
@@ -290,6 +291,8 @@ export function Home({ section }: { section?: string }) {
                 </div>
             </section>
 
+            <ExecutionGuide />
+
             <section className="code-section" id="getting-started">
                 <div className="container code-layout">
                     <div className="code-copy">
@@ -304,8 +307,8 @@ export function Home({ section }: { section?: string }) {
                         </h2>
                         <p>
                             {t(
-                                "Pass your geometry arrays. Add a codec, set a chunk budget, and let MeshQuilt handle splitting and shared quantization.",
-                                "传入原始几何数组，添加编解码器、设置分块上限，剩下的拆分与共享量化交给 MeshQuilt。"
+                                "Pass typed arrays and set a chunk budget. For large browser models, use a whole Worker; for custom runtimes, inject a codec directly.",
+                                "传入类型化数组并设置分块上限。大型浏览器模型使用整体 Worker，自定义运行时则可以直接注入编解码器。"
                             )}
                         </p>
                         <ul className="code-benefits">
@@ -329,11 +332,15 @@ export function Home({ section }: { section?: string }) {
                             </a>
                         </Button>
                     </div>
-                    <Tabs defaultValue="mesh" className="example-tabs">
+                    <Tabs defaultValue="whole" className="example-tabs">
                         <TabsList className="example-tabs-list" aria-label={t("Code examples", "代码示例")}>
+                            <TabsTrigger value="whole">{t("Whole Worker", "整体 Worker")}</TabsTrigger>
                             <TabsTrigger value="mesh">{t("Encode & decode", "编码与解码")}</TabsTrigger>
                             <TabsTrigger value="workers">{t("Worker pool", "Worker 池")}</TabsTrigger>
                         </TabsList>
+                        <TabsContent value="whole">
+                            <CodeBlock code={wholeWorkerExample} title="large-model.ts" />
+                        </TabsContent>
                         <TabsContent value="mesh">
                             <CodeBlock code={encodeExample} title="mesh.ts" />
                         </TabsContent>
@@ -342,13 +349,15 @@ export function Home({ section }: { section?: string }) {
                         </TabsContent>
                         <p className="code-footnote">
                             {t(
-                                "Bring your own Draco build. Initialize its modules before encoding.",
-                                "自行提供 Draco 构建，编码前先初始化模块。"
+                                "Supply the Worker asset and Draco binaries. Direct encoding needs initialized modules; the whole Worker initializes its own module.",
+                                "提供 Worker 文件与 Draco 二进制。直接编码需要预先初始化模块，整体 Worker 会自行初始化。"
                             )}
                         </p>
                     </Tabs>
                 </div>
             </section>
+
+            <PerformanceOverview />
 
             <section className="section container" id="architecture">
                 <div className="section-heading">
@@ -403,8 +412,8 @@ export function Home({ section }: { section?: string }) {
                             label: t("The compression adapter", "压缩适配器"),
                             name: "meshquilt/draco",
                             description: t(
-                                "Draco encode and decode adapters, plus a pool of isolated encoding workers.",
-                                "Draco 编解码适配器，以及隔离实例的编码 Worker 池。"
+                                "Injected Draco adapters, whole-pipeline encoding and a pool of isolated chunk Workers.",
+                                "注入式 Draco 适配器、整体流水线编码与隔离实例的分块 Worker 池。"
                             ),
                             tags: ["Draco", "Web Workers"]
                         }
@@ -429,14 +438,25 @@ export function Home({ section }: { section?: string }) {
                     <Workflow size={17} />
                     <code>GeometryInput</code>
                     <ArrowRight size={14} />
-                    <span>{t("split + quantize", "分块 + 量化")}</span>
+                    <span>{t("validate + shared bounds", "校验 + 共享范围")}</span>
+                    <ArrowRight size={14} />
+                    <span>{t("split", "分块")}</span>
                     <ArrowRight size={14} />
                     <span>{t("encode chunks", "逐块编码")}</span>
                     <ArrowRight size={14} />
                     <code>MQLT</code>
                     <ArrowRight size={14} />
+                    <span>{t("decode", "解码")}</span>
+                    <ArrowRight size={14} />
                     <code>ChunkGeometry[]</code>
                 </div>
+                <p className="renderer-note">
+                    {t(
+                        "Use your own renderer. Three.js is a tested source example, not a library dependency.",
+                        "使用自己的渲染器。Three.js 是经过测试的源码示例，不是库的依赖。"
+                    )}{" "}
+                    <a href="#/docs/three">{t("Three.js integration", "Three.js 集成")}</a>
+                </p>
             </section>
 
             <section className="docs-banner container">

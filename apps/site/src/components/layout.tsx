@@ -36,6 +36,7 @@ export function Header({ route }: { route: string }) {
 
     const links = [
         { href: "#/docs/introduction", name: t("Documentation", "文档"), active: route.startsWith("/docs/") },
+        { href: "#/performance", name: t("Performance", "性能"), active: route === "/performance" },
         { href: "#/playground", name: t("Explore the mesh", "探索网格"), active: route === "/playground" },
         { href: "#/changelog", name: t("Changelog", "更新日志"), active: route === "/changelog" }
     ];
@@ -120,7 +121,7 @@ export function Header({ route }: { route: string }) {
                 >
                     <DialogTitle>{t("Explore MeshQuilt", "探索 MeshQuilt")}</DialogTitle>
                     <DialogDescription>
-                        {t("A modular mesh codec for the browser.", "面向浏览器的模块化网格编解码库。")}
+                        {t("Array-first mesh encoding with shared quantization.", "面向数组、共享量化的网格编码库。")}
                     </DialogDescription>
                     <nav aria-label={t("Mobile navigation", "移动导航")}>
                         {links.map((link) => (
@@ -154,6 +155,8 @@ export function Footer() {
                         <strong>{t("Learn", "学习")}</strong>
                         <a href="#/docs/quick-start">{t("Quick start", "快速上手")}</a>
                         <a href="#/docs/quantization">{t("Quantization", "量化机制")}</a>
+                        <a href="#/docs/workers">{t("Workers & ownership", "Worker 与所有权")}</a>
+                        <a href="#/docs/performance">{t("Performance", "性能")}</a>
                         <a href="#/docs/container-format">{t("Container format", "容器格式")}</a>
                     </div>
                     <div>

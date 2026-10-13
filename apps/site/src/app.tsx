@@ -48,7 +48,7 @@ function Site() {
         const doc = docs.find((item) => item.id === docId);
         document.title = doc
             ? `${doc.title[language === "en" ? 0 : 1]} — MeshQuilt`
-            : t("MeshQuilt — A modular mesh codec for the browser", "MeshQuilt — 面向浏览器的模块化网格编解码库");
+            : t("MeshQuilt — Large meshes. One shared grid.", "MeshQuilt — 大型网格，共享量化。");
         if (docId || route === "/") window.scrollTo(0, 0);
     }, [route, language, docId, t]);
 

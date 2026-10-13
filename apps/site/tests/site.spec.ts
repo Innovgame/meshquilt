@@ -9,7 +9,7 @@ test("homepage renders actual geometry under a Pages subpath without browser err
         if (response.status() >= 400) failures.push(response.url());
     });
     await page.goto("./");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("One mesh.");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Millions of triangles.");
     await expect(page.locator(".mesh-canvas canvas")).toBeVisible();
     await expect(page.locator(".preview-stats")).toContainText("7,200");
     await expect(page.locator(".package-card")).toHaveCount(3);
@@ -44,11 +44,11 @@ test("language and theme persist and documentation follows the selected language
     await page.goto("./");
     await page.getByRole("button", { name: "Switch to Chinese" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("一个网格");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("百万三角面");
     await page.getByRole("button", { name: "切换深色主题" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.reload();
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("一个网格");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("百万三角面");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.goto("./#/docs/quick-start");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("快速上手");
@@ -79,13 +79,69 @@ test("code tabs change examples and copying uses the actual displayed code", asy
     test.skip(browserName !== "chromium", "Chromium clipboard permissions required");
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("./");
+    const examples = page.getByRole("tablist", { name: "Code examples" });
+    await expect(examples.getByRole("tab", { name: "Whole Worker" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tabpanel", { name: "Whole Worker" })).toContainText("encodeDracoInWorker");
+    await expect(page.getByRole("tabpanel", { name: "Whole Worker" })).toContainText("transferInput: false");
     await page.getByRole("tab", { name: "Worker pool" }).click();
-    await expect(page.getByRole("tabpanel")).toContainText("pool.dispose()");
+    await expect(page.getByRole("tabpanel", { name: "Worker pool" })).toContainText("pool.dispose()");
     await page.getByRole("button", { name: "Copy code" }).click();
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboard).toContain("createDracoWorkerPool");
     expect(clipboard).toContain("concurrency: 2");
     await expect(page.getByText("Copied", { exact: true })).toBeVisible();
+});
+
+test("execution guide explains thread placement and ownership for each mode", async ({ page }) => {
+    await page.goto("./#/execution");
+    const tabs = page.getByRole("tablist", { name: "Execution modes" });
+    await expect(tabs.getByRole("tab", { name: "Whole pipeline" })).toHaveAttribute("aria-selected", "true");
+    const guide = page.locator(".execution-guide");
+    await expect(guide).toContainText("encodeDracoInWorker");
+    await expect(guide).toContainText("All processing runs in one dedicated Worker");
+    await expect(guide).toContainText("transferInput: true");
+    await tabs.getByRole("tab", { name: "Chunk pool" }).click();
+    await expect(guide).toContainText("Preprocessing stays on the calling thread");
+    await expect(guide).toContainText("Input arrays remain attached");
+    await tabs.getByRole("tab", { name: "Chunk pool" }).focus();
+    await page.keyboard.press("End");
+    await expect(tabs.getByRole("tab", { name: "Direct module" })).toHaveAttribute("aria-selected", "true");
+    await expect(guide).toContainText("Use concurrency: 1");
+    await page.getByRole("button", { name: "Switch to Chinese" }).click();
+    await expect(guide).toContainText("直接模块");
+    await expect(guide).toContainText("调用线程");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.getByRole("tab", { name: "整体流水线" }).click();
+    await guide.screenshot({
+        path: `../../.tmp/site-execution-zh-${test.info().project.name}.png`,
+        style: ".site-header, .skip-link { visibility: hidden !important; }"
+    });
+});
+
+test("benchmark fixtures switch measured data and link to the methodology", async ({ page }) => {
+    await page.goto("./#/performance");
+    const benchmark = page.getByRole("region", { name: "Local benchmark results" });
+    await expect(benchmark).toContainText("407 ms");
+    await expect(benchmark).toContainText("1.6 ms");
+    await expect(benchmark).toContainText("19 MiB");
+    await benchmark.getByRole("button", { name: "Triangle soup" }).click();
+    await expect(benchmark.getByRole("button", { name: "Triangle soup" })).toHaveAttribute("aria-pressed", "true");
+    await expect(benchmark).toContainText("574 ms");
+    await expect(benchmark).toContainText("1.3 ms");
+    await expect(benchmark).toContainText("133 MiB");
+    await benchmark.screenshot({
+        path: `../../.tmp/site-performance-${test.info().project.name}.png`,
+        style: ".site-header, .skip-link { visibility: hidden !important; }"
+    });
+    await page.getByRole("button", { name: "Switch to Chinese" }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.locator("#performance").screenshot({
+        path: `../../.tmp/site-performance-zh-${test.info().project.name}.png`,
+        style: ".site-header, .skip-link { visibility: hidden !important; }"
+    });
+    await page.getByRole("button", { name: "切换到英文" }).click();
+    await benchmark.getByRole("link", { name: "Benchmark methodology" }).click();
+    await expect(page.locator(".markdown-content h1")).toHaveText("Performance and benchmark workflow");
 });
 
 test("all docs load directly, survive refresh, and use valid internal navigation", async ({ page }) => {

@@ -777,36 +777,6 @@ h2 {
     font-size: 11px;
     margin-top: 17px;
 }
-.worker-lanes {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-top: 18px;
-}
-.worker-lanes > div {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-.worker-lanes span {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 8px;
-    color: var(--muted);
-    min-width: 75px;
-}
-.worker-lanes i {
-    flex-grow: 1;
-    height: 9px;
-    background: #b1c8e5;
-    border-radius: 2px;
-}
-.worker-lanes > div:nth-child(2) i {
-    background: #97c5b5;
-}
-.worker-lanes > div:nth-child(3) i {
-    background: #e9baa1;
-}
-
 .code-section {
     background: #20364b;
     color: #f0f4f9;
@@ -1792,10 +1762,6 @@ h2 {
     }
     .feature-title .technical-badge {
         font-size: 8px;
-    }
-    .worker-lanes span {
-        min-width: 57px;
-        font-size: 7px;
     }
     .grid-diagram {
         max-width: 500px;

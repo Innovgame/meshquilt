@@ -15,7 +15,11 @@ pnpm --filter @meshquilt/site exec playwright install chromium
 pnpm site:test
 ```
 
-English is the default. Language and theme persist locally. API guides live in `docs/`, Chinese translations in `docs/zh/`; `src/lib/docs.ts` maps both sets into the website. The contribution guide and changelog are imported from their canonical root files. Update both languages when APIs change. Version comes from root workspace metadata. Examples use array-first `meshquilt` and `meshquilt/draco`; Three.js is used only to render the preview and in the private integration example.
+English is the default. Language and theme persist locally. API guides live in `docs/`, Chinese translations in `docs/zh/`; `src/lib/docs.ts` maps both sets into the website. The contribution guide and changelog are imported from their canonical root files. Update both languages when APIs change. Version comes from the published library's package metadata. Examples use array-first `meshquilt` and `meshquilt/draco`; Three.js is used only to render the preview and in the private integration example.
+
+The homepage explains shared quantization, whole-pipeline Workers, chunk pools and direct encoding. Its execution guide shows thread placement and input ownership; the default code example preserves input buffers with `transferInput: false`. `#/execution` and `#/performance` link directly to these sections.
+
+The performance comparison is a fixed local measurement snapshot from `docs/performance.md`, not a browser benchmark. It switches between indexed geometry and triangle soup and compares encoding time, main-thread timer delay and encoder WASM capacity separately. Update the source snapshot, date and sampling conditions when the canonical benchmark documentation changes. The preparation note describes Vitest preprocessing savings, not total Draco encoding gains. Homepage-specific layout styles live in `src/pages/home.css`.
 
 The 3D preview calls `meshquilt` with a generated indexed torus knot: 7,200 triangles split into 16 chunks of at most 450 triangles. It does not run Draco compression or claim benchmark results. WebGL failure has a readable fallback. Automatic rotation is opt-in, respects reduced motion, and pauses when the preview is outside the viewport or the tab is hidden.
 

@@ -1,6 +1,24 @@
 import contributing from "../../../../CONTRIBUTING.md?raw";
 import changelog from "../../../../CHANGELOG.md?raw";
 
+export const wholeWorkerExample = `import { encodeDracoInWorker } from "meshquilt/draco";
+
+// Serve meshquilt/worker as a classic Worker asset.
+// Provide your own Draco script and matching WASM.
+const bytes = await encodeDracoInWorker(geometry, {
+    workerUrl,
+    encoderScriptUrl: "/draco/draco_encoder.js",
+    maxTriangles: 100_000,
+    transferInput: false, // Keep caller-owned buffers.
+    timeoutMs: 120_000,
+    signal,
+    onProgress({ completedChunks, totalChunks }) {
+        console.log(completedChunks, totalChunks);
+    }
+});
+// Validate, split, encode and pack inside one Worker.
+// Set transferInput: true only to give up input ownership.`;
+
 export const encodeExample = `import { encodeGeometry, decodeGeometry } from "meshquilt";
 import {
     createDracoChunkEncoder,
@@ -101,7 +119,7 @@ export const docs: Doc[] = [
         "workers",
         "workers",
         ["Browser Workers", "浏览器 Worker"],
-        ["Asset deployment, scheduling and lifecycle.", "资源部署、调度与生命周期。"],
+        ["Whole-pipeline Workers, pools and input ownership.", "整体 Worker、分块池与输入所有权。"],
         "api"
     ),
     page(

@@ -1,4 +1,4 @@
-import metadata from "../../../../package.json";
+import metadata from "../../../../packages/meshquilt/package.json";
 
 export const version = metadata.version;
 export const repositoryUrl = __REPOSITORY_URL__;
