@@ -74,7 +74,7 @@ jobs:
                       release-artifact/github-packages.tgz
                   if-no-files-found: error
             - name: Dry-run npm publish
-              run: npm publish release-artifact/meshquilt-*.tgz --dry-run --access public
+              run: npm publish --dry-run --access public ./release-artifact/meshquilt-*.tgz
 
     publish:
         if: inputs.publish || github.event_name == 'release'
@@ -107,7 +107,7 @@ jobs:
                       exit 1
                   fi
                   version="$(tar -xOf "${tarballs[0]}" package/package.json | node -e 'let source=""; process.stdin.on("data", (chunk) => source += chunk); process.stdin.on("end", () => process.stdout.write(JSON.parse(source).version));')"
-                  if npm publish "${tarballs[0]}" --access public --provenance --tag "$NPM_TAG"; then
+                  if npm publish --access public --provenance --tag "$NPM_TAG" "./${tarballs[0]}"; then
                       echo "Published meshquilt@${version} to npm."
                   elif npm view "meshquilt@${version}" version >/dev/null 2>&1; then
                       echo "meshquilt@${version} is already on npm."
@@ -139,7 +139,7 @@ jobs:
                   name="@${owner}/meshquilt"
                   version="$(tar -xOf release-artifact/github-packages.tgz package/package.json | node -e 'let source=""; process.stdin.on("data", (chunk) => source += chunk); process.stdin.on("end", () => process.stdout.write(JSON.parse(source).version));')"
                   printf '@%s:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "$owner" "$NODE_AUTH_TOKEN" >"$HOME/.npmrc"
-                  if npm publish release-artifact/github-packages.tgz --access public --ignore-scripts --registry https://npm.pkg.github.com; then
+                  if npm publish --access public --ignore-scripts --registry https://npm.pkg.github.com ./release-artifact/github-packages.tgz; then
                       echo "Published ${name}@${version} to GitHub Packages."
                   elif npm view "${name}@${version}" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
                       echo "${name}@${version} is already on GitHub Packages."
