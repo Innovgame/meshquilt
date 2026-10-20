@@ -39,7 +39,7 @@
         "test:performance": "playwright test --project library-performance"
     },
     "devDependencies": {
-        "@playwright/test": "^1.64.0",
+        "@playwright/test": "^1.64.1",
         "@types/draco3d": "^1.4.10",
         "draco3d": "1.5.7",
         "esbuild": "^0.28.2"
